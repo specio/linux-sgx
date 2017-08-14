@@ -251,7 +251,7 @@ bool EnclaveCreatorHW::open_se_device()
         return true;
     }
 
-    fd = open("/dev/isgx", O_RDWR);
+    fd = open("/dev/sgx", O_RDWR);
     if (-1 == fd) {
         SE_TRACE(SE_TRACE_WARNING, "open isgx device failed\n");
         return false;
