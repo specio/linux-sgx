@@ -187,16 +187,12 @@ int EnclaveCreatorHW::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, u
     return SGX_SUCCESS;
 }
 
-int EnclaveCreatorHW::try_init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, token_t *launch)
+int EnclaveCreatorHW::try_init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, token_t *)
 {
     int ret = 0;
     struct sgx_enclave_init initp = { 0, 0, 0 };
     initp.addr = (__u64)enclave_id;
     initp.sigstruct = reinterpret_cast<uintptr_t>(enclave_css);
-    //launch should NOT be NULL, because it has been checked in urts_com.h::_create_enclave(...)
-    assert(launch != NULL);
-
-    initp.einittoken = reinterpret_cast<uintptr_t>(launch);
     ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_INIT, &initp);
     if (ret) {
         SE_TRACE(SE_TRACE_WARNING, "\nISGX_IOCTL_ENCLAVE_INIT failed error = %d\n", ret);

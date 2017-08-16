@@ -41,7 +41,7 @@ server_ae_url=$server_url_path/$ae_file_name
 optlib_sha256=239cae39f87934d56c4eb919a4702c6ac82c19957b9a8d56c02b10eb4e27f573
 ae_sha256=c2f86a1e8483b91c5517c99d196599492f3106d4b2f9f7523fd9eaf59b9ed37b
 rm -rf $out_dir/$optlib_name
-wget $server_optlib_url -P $out_dir 
+wget --no-check-certificate $server_optlib_url -P $out_dir 
 if [ $? -ne 0 ]; then
     echo "Fail to download file $server_optlib_url"
     exit -1
@@ -53,7 +53,7 @@ if [ $? -ne 0 ]; then
     exit -1
 fi
 rm -rf $out_dir/$ae_file_name
-wget $server_ae_url -P $out_dir
+wget --no-check-certificate $server_ae_url -P $out_dir
 if [ $? -ne 0 ]; then
     echo "Fail to download file $server_ae_url"
     exit -1

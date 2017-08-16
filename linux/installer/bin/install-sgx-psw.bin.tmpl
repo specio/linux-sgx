@@ -30,9 +30,9 @@
 #
 #
 
-modinfo isgx &> /dev/null
+modinfo intel_sgx &> /dev/null
 if [[ $? != "0" ]]; then
-    lsmod | grep isgx &> /dev/null
+    lsmod | grep intel_sgx &> /dev/null
     if [[ $? = "0" ]]; then
         echo "Warning: You did not follow the document to install the driver package"
         echo

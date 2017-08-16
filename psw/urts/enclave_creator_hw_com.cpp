@@ -173,11 +173,14 @@ int EnclaveCreatorHW::get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadat
 
 int EnclaveCreatorHW::init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, SGXLaunchToken * lc, le_prd_css_file_t *prd_css_file)
 {
+    enclave_css_t css;
+    if (lc == NULL){
+        return try_init_enclave(enclave_id, &css, NULL);
+    }
     unsigned int ret = 0;
     sgx_launch_token_t token;
     memset(token, 0, sizeof(sgx_launch_token_t));
 
-    enclave_css_t css;
     memcpy_s(&css, sizeof(enclave_css_t),  enclave_css, sizeof(enclave_css_t));
 
     for(int i = 0; i < 2; i++)

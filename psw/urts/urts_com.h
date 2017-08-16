@@ -279,7 +279,6 @@ fail:
 sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr)
 {
     unsigned int ret = SGX_SUCCESS;
-    sgx_status_t lt_result = SGX_SUCCESS;
     uint32_t file_size = 0;
     map_handle_t* mh = NULL;
     sgx_misc_attribute_t sgx_misc_attr;
@@ -319,22 +318,6 @@ sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t
 
     *launch_updated = FALSE;
 
-    lc = new SGXLaunchToken(&metadata->enclave_css, &sgx_misc_attr.secs_attr, launch);
-    lt_result = lc->update_launch_token(false);
-    if(SGX_SUCCESS != lt_result)
-    {
-        ret = lt_result;
-        goto clean_return;
-    }
-#ifndef SE_SIM
-    // Only LE allows the prd_css_file
-    if(is_le(lc, &metadata->enclave_css) == false && prd_css_file != NULL)
-    {
-        ret = SGX_ERROR_INVALID_PARAMETER;
-        goto clean_return;
-    }
-#endif
-
     //Need to set the whole misc_attr instead of just secs_attr.
     do {
         ret = __create_enclave(parser, mh->base_addr, metadata, file, debug, lc, prd_css_file, enclave_id,
@@ -355,7 +338,7 @@ sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t
 
     if(SGX_SUCCESS != ret)
         goto clean_return;
-    else if(lc->is_launch_updated())
+    else if(lc!=NULL&&lc->is_launch_updated())
     {
         *launch_updated = TRUE;
         ret = lc->get_launch_token(launch);
