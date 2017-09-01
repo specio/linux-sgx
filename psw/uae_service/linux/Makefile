@@ -57,7 +57,7 @@ INCLUDE += -I$(LINUX_EXTERNAL_DIR)/epid     \
            -I$(IPC_COMMON_PROTO_DIR) \
            -I$(LINUX_PSW_DIR)/ae/aesm_service/source
 
-CXXFLAGS += -fPIC -Werror -g -DPROTOBUF_INLINE_NOT_IN_HEADERS=0
+CXXFLAGS += -fPIC -Werror -g -DPROTOBUF_INLINE_NOT_IN_HEADERS=0 -Wno-error=unused-parameter
 
 EXTERNAL_LIB += -lprotobuf 
  
