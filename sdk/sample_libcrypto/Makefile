@@ -37,7 +37,9 @@ CXXFLAGS += -Werror -fno-rtti -fno-exceptions -fPIC
 
 CPPFLAGS := -isystem $(SGX_IPP_INC) \
             -I$(COMMON_DIR)/inc/internal/           
-
+ifneq (,$(findstring clang,$(CC)))
+CPPFLAGS += -Wno-sign-conversion -Wno-cast-align
+endif
 LDFLAGS := -Bdynamic -L$(IPP_LIBS_DIR) $(LD_IPP) 
 LDFLAGS += -Wl,--version-script,sample_libcrypto.lds -Wl,--gc-sections
 

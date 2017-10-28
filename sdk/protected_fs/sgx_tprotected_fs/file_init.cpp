@@ -104,7 +104,7 @@ protected_fs_file::protected_fs_file(const char* filename, const char* mode, con
 	result32 = sgx_thread_mutex_init(&mutex, NULL);
 	if (result32 != 0)
 	{
-		last_error = result32;
+		last_error = (uint32_t)result32;
 		return;
 	}
 
@@ -166,7 +166,7 @@ protected_fs_file::protected_fs_file(const char* filename, const char* mode, con
 		if (status != SGX_SUCCESS || result == 1)
 		{
 			last_error = (status != SGX_SUCCESS) ? status :
-						 (saved_errno != 0) ? saved_errno : EACCES;
+						 (saved_errno != 0) ? (uint32_t)saved_errno : EACCES;
 			return;
 		}
 	}
@@ -191,7 +191,7 @@ protected_fs_file::protected_fs_file(const char* filename, const char* mode, con
 		if (status != SGX_SUCCESS || file == NULL)
 		{
 			last_error = (status != SGX_SUCCESS) ? status :
-					     (result32 != 0) ? result32 : EACCES;
+					     (result32 != 0) ? (uint32_t)result32 : EACCES;
 			break;
 		}
 
@@ -344,7 +344,7 @@ bool protected_fs_file::file_recovery(const char* filename)
 	if (status != SGX_SUCCESS || result32 != 0)
 	{
 		last_error = (status != SGX_SUCCESS) ? status : 
-					 (result32 != -1) ? result32 : EINVAL;
+					 (result32 != -1) ? (uint32_t)result32 : EINVAL;
 		return false;
 	}
 
@@ -354,7 +354,7 @@ bool protected_fs_file::file_recovery(const char* filename)
 	if (status != SGX_SUCCESS || result32 != 0)
 	{
 		last_error = (status != SGX_SUCCESS) ? status :
-					 (result32 != -1) ? result32 : EINVAL;
+					 (result32 != -1) ? (uint32_t)result32 : EINVAL;
 		return false;
 	}
 
@@ -362,7 +362,7 @@ bool protected_fs_file::file_recovery(const char* filename)
 	if (status != SGX_SUCCESS || file == NULL)
 	{
 		last_error = (status != SGX_SUCCESS) ? status : 
-					 (result32 != 0) ? result32 : EACCES;
+					 (result32 != 0) ? (uint32_t)result32 : EACCES;
 		return false;
 	}
 
@@ -377,7 +377,7 @@ bool protected_fs_file::file_recovery(const char* filename)
 	if (status != SGX_SUCCESS || result32 != 0)
 	{
 		last_error = (status != SGX_SUCCESS) ? status : 
-					 (result32 != -1) ? result32 : EIO;
+					 (result32 != -1) ? (uint32_t)result32 : EIO;
 		return false;
 	}
 
@@ -395,7 +395,7 @@ bool protected_fs_file::init_existing_file(const char* filename, const char* cle
 	if (status != SGX_SUCCESS || result32 != 0)
 	{
 		last_error = (status != SGX_SUCCESS) ? status : 
-					 (result32 != -1) ? result32 : EIO;
+					 (result32 != -1) ? (uint32_t)result32 : EIO;
 		return false;
 	}
 
@@ -512,7 +512,7 @@ bool protected_fs_file::init_existing_file(const char* filename, const char* cle
 		if (status != SGX_SUCCESS || result32 != 0)
 		{
 			last_error = (status != SGX_SUCCESS) ? status : 
-						 (result32 != -1) ? result32 : EIO;
+						 (result32 != -1) ? (uint32_t)result32 : EIO;
 			return false;
 		}
 
@@ -617,7 +617,7 @@ bool protected_fs_file::pre_close(sgx_key_128bit_t* key, bool import)
 		if (status != SGX_SUCCESS || result32 != 0)
 		{
 			last_error = (status != SGX_SUCCESS) ? status : 
-						 (result32 != -1) ? result32 : SGX_ERROR_FILE_CLOSE_FAILED;
+						 (result32 != -1) ? (uint32_t)result32 : SGX_ERROR_FILE_CLOSE_FAILED;
 			retval = false;
 		}
 

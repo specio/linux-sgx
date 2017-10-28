@@ -140,7 +140,7 @@ uint8_t u_sgxprotectedfs_check_if_file_exists(const char* filename)
 int32_t u_sgxprotectedfs_fread_node(void* f, uint64_t node_number, uint8_t* buffer, uint32_t node_size)
 {
 	FILE* file = (FILE*)f;
-	uint64_t offset = node_number * node_size;
+	__off_t offset = (__off_t)node_number * node_size;
 	int result = 0;
 	size_t size = 0;
 
@@ -190,7 +190,7 @@ int32_t u_sgxprotectedfs_fread_node(void* f, uint64_t node_number, uint8_t* buff
 int32_t u_sgxprotectedfs_fwrite_node(void* f, uint64_t node_number, uint8_t* buffer, uint32_t node_size)
 {
 	FILE* file = (FILE*)f;
-	uint64_t offset = node_number * node_size;
+	__off_t offset =(__off_t) node_number * node_size;
 	int result = 0;
 	size_t size = 0;
 
@@ -366,7 +366,7 @@ int32_t u_sgxprotectedfs_do_file_recovery(const char* filename, const char* reco
 	int32_t ret = -1;
 	uint32_t nodes_count = 0;
 	uint32_t recovery_node_size = (uint32_t)(sizeof(uint64_t)) + node_size; // node offset + data
-	uint64_t file_size = 0;
+	__off_t file_size = 0;
 	int err = 0;
 	int result = 0;
 	size_t count = 0;
@@ -453,7 +453,7 @@ int32_t u_sgxprotectedfs_do_file_recovery(const char* filename, const char* reco
 			}
 
 			// seek the regular file to the required offset
-			if ((result = fseeko(source_file, (*((uint64_t*)recovery_node)) * node_size, SEEK_SET)) != 0)
+			if ((result = fseeko(source_file, (__off_t) ((*(reinterpret_cast<uint64_t*>(recovery_node))) * node_size), SEEK_SET)) != 0)
 			{
 				DEBUG_PRINT("fseeko returned %d\n", result);
 				if (errno != 0)

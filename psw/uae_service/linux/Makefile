@@ -59,6 +59,11 @@ INCLUDE += -I$(LINUX_EXTERNAL_DIR)/epid     \
 
 CXXFLAGS += -fPIC -Werror -g -DPROTOBUF_INLINE_NOT_IN_HEADERS=0
 
+ifneq (,$(findstring clang,$(CC)))
+CXXFLAGS += -Wno-unknown-pragmas -Wno-sign-conversion -Wno-cast-align
+CFLAGS += -Wno-unknown-pragmas -Wno-sign-conversion -Wno-cast-align
+endif
+
 EXTERNAL_LIB += -lprotobuf 
  
 vpath %.cpp .. $(COMMON_DIR)/src  $(IPC_COMMON_SRC_DIR) $(IPC_COMMON_PROTO_DIR) $(UAE_SRC_DIR) $(AE_COMMON_DIR)

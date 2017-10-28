@@ -150,7 +150,7 @@ sgx_status_t do_ecall(int index, void *ms, void *tcs)
             return status;
         }
     }
-    status = trts_ecall(index, ms);
+    status = trts_ecall((uint32_t)index, ms);
     return status;
 }
 

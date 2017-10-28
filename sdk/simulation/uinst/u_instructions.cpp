@@ -191,7 +191,7 @@ uintptr_t _EREMOVE(const void *epc_lin_addr)
     GP_ON(!ce);
     GP_ON(!IS_PAGE_ALIGNED(epc_lin_addr));
 
-    return ce->remove_page(epc_lin_addr) ? 0 : -1;
+    return ce->remove_page(epc_lin_addr) ? 0 : (uintptr_t)-1;
 }
 
 ////////////////////////////////////////////////////////////////////////

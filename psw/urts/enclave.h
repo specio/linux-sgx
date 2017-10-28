@@ -85,7 +85,6 @@ private:
     void                    *m_start_addr;
     uint64_t                m_size;
     se_rwlock_t             m_rwlock;
-    uint32_t                m_power_event_flag;
     uint32_t                m_ref;
     bool                    m_zombie;
     CTrustThreadPool        *m_thread_pool;

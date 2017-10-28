@@ -308,7 +308,7 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
     }
  
     if ((TD2TCS(thread_data) != tcs) 
-            || (((thread_data->first_ssa_gpr)&(~0xfff)) - SE_PAGE_SIZE) != (uintptr_t)tcs) {
+            || (((thread_data->first_ssa_gpr)&(~0xfffu)) - SE_PAGE_SIZE) != (uintptr_t)tcs) {
         goto default_handler;
     }
 
@@ -331,7 +331,7 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
     // decrease the stack to give space for info
     size += sizeof(sgx_exception_info_t);
     sp -= size;
-    sp = sp & ~0xF;
+    sp = sp & ~0xFU;
 
     // check the decreased sp to make sure it is in the trusted stack range
     if(!is_stack_addr((void *)sp, size))

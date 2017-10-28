@@ -6,7 +6,6 @@
 // Source Licenses. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
-
 #include "algorithm"
 
 // SGX compatible. Partial support. Priority 1.

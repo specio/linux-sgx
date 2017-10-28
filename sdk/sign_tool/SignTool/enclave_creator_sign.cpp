@@ -174,7 +174,7 @@ int EnclaveCreatorST::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, u
         uint8_t eextend_val[SIZE_NAMED_VALUE] = "EEXTEND";
 
 #define EEXTEND_TIME  4 
-        for(int i = 0; i < SE_PAGE_SIZE; i += (DATA_BLOCK_SIZE * EEXTEND_TIME))
+        for(size_t i = 0; i < SE_PAGE_SIZE; i += (DATA_BLOCK_SIZE * EEXTEND_TIME))
         {
             db_offset = 0;
             memset(data_block, 0, DATA_BLOCK_SIZE);

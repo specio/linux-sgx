@@ -35,9 +35,9 @@
 #include "se_types.h"
 
 
-#define XSAVE_ALIGN_SIZE        64
-#define FXSAVE_ALIGN_SIZE       16
-#define FXSAVE_SIZE             528
+#define XSAVE_ALIGN_SIZE        64u
+#define FXSAVE_ALIGN_SIZE       16u
+#define FXSAVE_SIZE             528u
 /* 512 + 16, the alignment is handled in internal functions */
 
 #define CLEAN_XFEATURE_REGS     save_and_clean_xfeature_regs(NULL);

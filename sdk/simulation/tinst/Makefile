@@ -41,6 +41,9 @@ CPPFLAGS += -I$(COMMON_DIR)/inc/           \
             -I$(SIM_DIR)/assembly/linux    \
             -I$(SIM_DIR)/uinst/            \
             -I$(LINUX_SDK_DIR)/selib
+ifneq (,$(findstring clang,$(CC)))
+CPPFLAGS += -Wno-sign-conversion -Wno-cast-align -Wno-unknown-pragmas
+endif
 
 CXXFLAGS += $(ENCLAVE_CXXFLAGS) -Werror -fno-exceptions -fno-rtti
 

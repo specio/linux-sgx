@@ -666,17 +666,17 @@ sgx_status_t sgx_ra_init_ex(
         }
         if(item == NULL)
         {
-            first_empty = i;
+            first_empty = (int)i;
             break;
         }
     }
     //if there is a empty slot, use it
     if (first_empty >= 0)
     {
-        errno_t vret = vector_set(&g_ra_db, first_empty, new_item);
+        errno_t vret = vector_set(&g_ra_db, (uint32_t)first_empty, new_item);
         UNUSED(vret);
         assert(vret == 0);
-        *p_context = first_empty;
+        *p_context = (sgx_ra_context_t)first_empty;
     }
     //if there are no empty slots, add a new item to g_ra_db
     else

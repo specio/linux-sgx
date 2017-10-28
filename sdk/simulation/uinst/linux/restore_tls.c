@@ -49,7 +49,7 @@ int td_mngr_restore_td(tcs_t *tcs)
         return 0;
 
     dtv = GET_DTV();
-    tcs_sim = (tcs_sim_t *)tcs->reserved;
+    tcs_sim = (tcs_sim_t *)(tcs->reserved);
     set_dtv_val(dtv, tcs_sim->saved_dtv);
     SET_FS_GS_0(tcs_sim->saved_fs_gs_0);
     return 1;

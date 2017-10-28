@@ -48,6 +48,10 @@ CXXFLAGS += -I$(COMMON_DIR)/inc/         \
             -I.                          \
             -I..
 
+ifneq (,$(findstring clang,$(CC)))
+CXXFLAGS += -Wno-unknown-pragmas -Wno-sign-conversion -Wno-cast-align
+endif
+
 .PHONY: all
 all: $(OBJS)
 	$(AR) rcs $(TARGET) $^

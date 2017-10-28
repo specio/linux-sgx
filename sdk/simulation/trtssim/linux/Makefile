@@ -35,7 +35,9 @@ CPPFLAGS += -I$(COMMON_DIR)/inc/         \
             -I$(COMMON_DIR)/inc/tlibc/   \
             -I$(COMMON_DIR)/inc/internal \
             -I$(LINUX_SDK_DIR)/trts/
-
+ifneq (,$(findstring clang,$(CC)))
+CPPFLAGS += -Wno-unknown-pragmas -Wno-sign-conversion -Wno-cast-align
+endif
 CFLAGS   += $(ENCLAVE_CFLAGS)
 ASFLAGS  := -DSE_SIM -Werror $(CFLAGS)
 CFLAGS   += -DSE_SIM -Werror -fasynchronous-unwind-tables

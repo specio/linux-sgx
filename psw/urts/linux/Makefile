@@ -35,6 +35,10 @@ ifndef DEBUG
 CXXFLAGS += -DDISABLE_TRACE
 CFLAGS += -DDISABLE_TRACE
 endif
+ifneq (,$(findstring clang,$(CC)))
+CXXFLAGS += -Wno-unknown-pragmas -Wno-sign-conversion -Wno-cast-align
+CFLAGS += -Wno-unknown-pragmas -Wno-sign-conversion -Wno-cast-align
+endif
 
 CXXFLAGS += -fPIC -Werror -g
 CXXFLAGS += $(ADDED_INC)

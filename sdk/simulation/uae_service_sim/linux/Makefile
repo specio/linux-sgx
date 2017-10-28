@@ -47,6 +47,9 @@ INCLUDES := -I..                                            \
 
 CXXFLAGS += -Wall -fPIC $(INCLUDES) -Werror -g
 CFLAGS := $(filter-out -fPIC -Werror, $(CFLAGS)) -Wall $(INCLUDES)
+ifneq (,$(findstring clang,$(CC)))
+CXXFLAGS += -Wno-sign-conversion -Wno-cast-align -Wno-unknown-pragmas
+endif
 
 VERSION_SCRIPT = $(shell pwd)/uae_service_sim.linux.version
 LD_OPT_WITHVER = -Wl,--version-script=$(VERSION_SCRIPT)

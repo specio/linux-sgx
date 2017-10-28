@@ -11,6 +11,7 @@
 #ifndef _LIBCPP_CONFIG
 #define _LIBCPP_CONFIG
 
+#include <__sgx>
 #if defined(_MSC_VER) && !defined(__clang__)
 #define _LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER
 #endif
@@ -419,12 +420,14 @@ typedef __char32_t char32_t;
 #define _LIBCPP_HAS_QUICK_EXIT
 #elif defined(__linux__)
 #if !defined(_LIBCPP_HAS_MUSL_LIBC)
+#if !defined(__clang__)
 # include <features.h>
 #if __GLIBC_PREREQ(2, 15)
 #define _LIBCPP_HAS_QUICK_EXIT
 #endif
 #if __GLIBC_PREREQ(2, 17)
 #define _LIBCPP_HAS_C11_FEATURES
+#endif
 #endif
 #else // defined(_LIBCPP_HAS_MUSL_LIBC)
 #define _LIBCPP_HAS_QUICK_EXIT
@@ -466,7 +469,6 @@ namespace std {
 
 #elif defined(__GNUC__)
 
-#include <__sgx>
 
 #define _ALIGNAS(x) __attribute__((__aligned__(x)))
 #define _ALIGNAS_TYPE(x) __attribute__((__aligned__(__alignof(x))))

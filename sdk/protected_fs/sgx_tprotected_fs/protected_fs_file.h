@@ -60,7 +60,7 @@ typedef enum
 /* copied from tseal_internal.h */
 /* set MISCMASK.exinfo_bit = 0 for data migration to the enclave
    built with the SDK that supports exinfo bit */
-#define SGX_MISCSEL_EXINFO     0x00000001  /* report #PF and #GP inside enclave */
+#define SGX_MISCSEL_EXINFO     0x00000001u  /* report #PF and #GP inside enclave */
 #define TSEAL_DEFAULT_MISCMASK (~SGX_MISCSEL_EXINFO)
 /* end of copied... */
 

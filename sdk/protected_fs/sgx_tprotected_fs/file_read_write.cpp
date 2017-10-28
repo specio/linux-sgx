@@ -42,7 +42,7 @@ size_t protected_fs_file::write(const void* ptr, size_t size, size_t count)
 	int32_t result32 = sgx_thread_mutex_lock(&mutex);
 	if (result32 != 0)
 	{
-		last_error = result32;
+		last_error = (uint32_t)result32;
 		file_status = SGX_FILE_STATUS_MEMORY_CORRUPTED;
 		return 0;
 	}
@@ -175,7 +175,7 @@ size_t protected_fs_file::read(void* ptr, size_t size, size_t count)
 	int32_t result32 = sgx_thread_mutex_lock(&mutex);
 	if (result32 != 0)
 	{
-		last_error = result32;
+		last_error = (uint32_t)result32;
 		file_status = SGX_FILE_STATUS_MEMORY_CORRUPTED;
 		return 0;
 	}
@@ -435,7 +435,7 @@ file_data_node_t* protected_fs_file::append_data_node()
 	new_file_data_node->type = FILE_DATA_NODE_TYPE;
 	new_file_data_node->new_node = true;
 	new_file_data_node->parent = file_mht_node;
-	get_node_numbers(offset, NULL, &new_file_data_node->data_node_number, NULL, &new_file_data_node->physical_node_number);
+	get_node_numbers((uint64_t)offset, NULL, &new_file_data_node->data_node_number, NULL, &new_file_data_node->physical_node_number);
 
 	if (cache.add(new_file_data_node->physical_node_number, new_file_data_node) == false)
 	{
@@ -456,7 +456,7 @@ file_data_node_t* protected_fs_file::read_data_node()
 	int32_t result32;
 	sgx_status_t status;
 
-	get_node_numbers(offset, NULL, &data_node_number, NULL, &physical_node_number);
+	get_node_numbers((uint64_t)offset, NULL, &data_node_number, NULL, &physical_node_number);
 
 	file_data_node_t* file_data_node = (file_data_node_t*)cache.get(physical_node_number);
 	if (file_data_node != NULL)
@@ -487,7 +487,7 @@ file_data_node_t* protected_fs_file::read_data_node()
 	{
 		delete file_data_node;
 		last_error = (status != SGX_SUCCESS) ? status : 
-					 (result32 != -1) ? result32 : EIO;
+					 (result32 != -1) ? (uint32_t)result32 : EIO;
 		return NULL;
 	}
 
@@ -530,13 +530,13 @@ file_mht_node_t* protected_fs_file::get_mht_node()
 		return NULL;
 	}
 
-	get_node_numbers(offset, &mht_node_number, NULL, &physical_mht_node_number, NULL);
+	get_node_numbers((uint64_t)offset, &mht_node_number, NULL, &physical_mht_node_number, NULL);
 
 	if (mht_node_number == 0)
 		return &root_mht;
 
 	// file is constructed from 128*4KB = 512KB per MHT node.
-	if ((offset - MD_USER_DATA_SIZE) % (ATTACHED_DATA_NODES_COUNT * NODE_SIZE) == 0 && 
+	if (((uint64_t)offset - MD_USER_DATA_SIZE) % (ATTACHED_DATA_NODES_COUNT * NODE_SIZE) == 0 && 
 		 offset == encrypted_part_plain.size)
 	{
 		file_mht_node = append_mht_node(mht_node_number);
@@ -625,7 +625,7 @@ file_mht_node_t* protected_fs_file::read_mht_node(uint64_t mht_node_number)
 	{
 		delete file_mht_node;
 		last_error = (status != SGX_SUCCESS) ? status : 
-					 (result32 != -1) ? result32 : EIO;
+					 (result32 != -1) ? (uint32_t)result32 : EIO;
 		return NULL;
 	}
 	

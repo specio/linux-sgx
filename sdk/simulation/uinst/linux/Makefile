@@ -46,6 +46,9 @@ CPPFLAGS += -I..                     \
             -I$(SIM_DIR)/assembly/linux    \
             -I$(COMMON_DIR)/inc      \
             -I$(COMMON_DIR)/inc/internal
+ifneq (,$(findstring clang,$(CC)))
+CPPFLAGS += -Wno-cast-align
+endif
 
 SOURCE := $(wildcard *.c)
 OBJECT := $(sort $(SOURCE:.c=.o))

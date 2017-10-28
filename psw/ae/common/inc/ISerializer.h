@@ -30,8 +30,7 @@
  */
 #ifndef __AE_SERIALIZER_H_
 #define __AE_SERIALIZER_H_
-
-struct AEMessage;
+struct  AEMessage;
 
 class IAERequest;
 class IAEResponse;

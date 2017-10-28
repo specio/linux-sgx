@@ -55,7 +55,7 @@ typedef struct {
 
 bool protected_fs_file::generate_secure_blob(sgx_aes_gcm_128bit_key_t* key, const char* label, uint64_t physical_node_number, sgx_aes_gcm_128bit_tag_t* output)
 {
-	kdf_input_t buf = {0, "", 0, "", 0};
+	kdf_input_t buf = {0, "", 0, {""}, 0};
 
 	uint32_t len = (uint32_t)strnlen(label, MAX_LABEL_LEN + 1);
 	if (len > MAX_LABEL_LEN)
@@ -107,7 +107,7 @@ bool protected_fs_file::generate_secure_blob(sgx_aes_gcm_128bit_key_t* key, cons
 
 bool protected_fs_file::generate_secure_blob_from_user_kdk(bool restore)
 {
-	kdf_input_t buf = {0, "", 0, "", 0};
+	kdf_input_t buf = {0, "", 0, {""}, 0};
 	sgx_status_t status = SGX_SUCCESS;
 
 	// index
@@ -251,7 +251,7 @@ bool protected_fs_file::restore_current_meta_data_key(const sgx_aes_gcm_128bit_k
 		return generate_secure_blob_from_user_kdk(true);
 	}
 
-	sgx_key_id_t empty_key_id = {0};
+	sgx_key_id_t empty_key_id = {{0}};
 	if (consttime_memequal(&file_meta_data.plain_part.meta_data_key_id, &empty_key_id, sizeof(sgx_key_id_t)) == 1)
 	{
 		last_error = SGX_ERROR_FILE_NO_KEY_ID;

@@ -94,7 +94,7 @@ sgx_status_t derive_key(
     /*label*/
     memcpy(&p_derivation_buffer[1], label, label_length);
     /*output_key_len=0x0080*/
-    uint16_t *key_len = (uint16_t *)&p_derivation_buffer[derivation_buffer_length - 2];
+    uint16_t *key_len = reinterpret_cast<uint16_t *>(&p_derivation_buffer[derivation_buffer_length - 2]);
     *key_len = 0x0080;
 
     se_ret = sgx_rijndael128_cmac_msg((sgx_cmac_128bit_key_t *)&key_derive_key,

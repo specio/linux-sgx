@@ -58,8 +58,8 @@ uint64_t get_xfeature_state()
     // target_info and report_data are useless
     // we only need to make sure their alignment and within enclave
     // so set the pointers to SYNTHETIC_STATE
-    sgx_target_info_t *target_info = (sgx_target_info_t *)SYNTHETIC_STATE;
-    sgx_report_data_t *report_data = (sgx_report_data_t *)SYNTHETIC_STATE;
+    const sgx_target_info_t *target_info = reinterpret_cast<const sgx_target_info_t *>(SYNTHETIC_STATE);
+    const sgx_report_data_t *report_data = reinterpret_cast<const sgx_report_data_t *>(SYNTHETIC_STATE);
     uint8_t buffer[sizeof(sgx_report_t) + REPORT_ALIGN_SIZE -1];
     for(size_t i=0; i< sizeof(sgx_report_t) + REPORT_ALIGN_SIZE -1; i++)
     {

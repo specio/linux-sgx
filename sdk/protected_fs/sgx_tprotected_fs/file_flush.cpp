@@ -43,7 +43,7 @@ bool protected_fs_file::flush(/*bool mc*/)
 	int32_t result32 = sgx_thread_mutex_lock(&mutex);
 	if (result32 != 0)
 	{
-		last_error = result32;
+		last_error = (uint32_t) result32;
 		file_status = SGX_FILE_STATUS_MEMORY_CORRUPTED;
 		return false;
 	}
@@ -259,7 +259,7 @@ bool protected_fs_file::set_update_flag(bool flush_to_disk)
 	if (status != SGX_SUCCESS || result32 != 0)
 	{
 		last_error = (status != SGX_SUCCESS) ? status : 
-					 (result32 != -1) ? result32 : EIO;
+					 (result32 != -1) ? (uint32_t)result32 : EIO;
 		return false;
 	}
 
@@ -482,7 +482,7 @@ bool protected_fs_file::write_all_changes_to_disk(bool flush_to_disk)
 			if (status != SGX_SUCCESS || result32 != 0)
 			{
 				last_error = (status != SGX_SUCCESS) ? status : 
-							 (result32 != -1) ? result32 : EIO;
+							 (result32 != -1) ? (uint32_t)result32 : EIO;
 				return false;
 			}
 
@@ -504,7 +504,7 @@ bool protected_fs_file::write_all_changes_to_disk(bool flush_to_disk)
 		if (status != SGX_SUCCESS || result32 != 0)
 		{
 			last_error = (status != SGX_SUCCESS) ? status : 
-						 (result32 != -1) ? result32 : EIO;
+						 (result32 != -1) ? (uint32_t)result32 : EIO;
 			return false;
 		}
 		root_mht.need_writing = false;
@@ -515,7 +515,7 @@ bool protected_fs_file::write_all_changes_to_disk(bool flush_to_disk)
 	if (status != SGX_SUCCESS || result32 != 0)
 	{
 		last_error = (status != SGX_SUCCESS) ? status : 
-					 (result32 != -1) ? result32 : EIO;
+					 (result32 != -1) ? (uint32_t)result32 : EIO;
 		return false;
 	}
 

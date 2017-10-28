@@ -29,6 +29,9 @@
  */
 
 #include <string.h>
+#define __weak_alias(alias,sym)                 \
+    __asm__(".weak " __STRING(alias) " ; "      \
+        __STRING(alias) " = " __STRING(sym))
 
 __weak_alias(index, strchr);
 

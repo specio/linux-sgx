@@ -35,7 +35,9 @@
 #ifdef _TLIBC_USE_INTEL_FAST_STRING_
 extern char *_intel_fast_strrchr(const char *, int);
 #endif
-
+#define __weak_alias(alias,sym)                 \
+    __asm__(".weak " __STRING(alias) " ; "      \
+        __STRING(alias) " = " __STRING(sym))
 __weak_alias(rindex, strrchr);
 
 char *

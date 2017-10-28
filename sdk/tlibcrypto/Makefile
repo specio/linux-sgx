@@ -41,7 +41,9 @@ CPPFLAGS := -I$(COMMON_DIR)/inc/internal \
 ifneq ($(USE_OPT_LIBS), 0)
 	CXXFLAGS += -DSGX_USE_OPT_LIB	
 endif
-
+ifneq (,$(findstring clang,$(CC)))
+CPPFLAGS += -Wno-sign-conversion -Wno-cast-align
+endif
 OBJ = init_tcrypto_lib.o sgx_aes_ctr.o sgx_aes_gcm.o sgx_cmac128.o sgx_ecc256.o sgx_ecc256_common.o sgx_ecc256_ecdsa.o sgx_sha256.o sgx_sha256_msg.o tcrypto_version.o sgx_ecc512.o sgx_rsa3072.o
 
 TARGET := libsgx_tcrypto.a

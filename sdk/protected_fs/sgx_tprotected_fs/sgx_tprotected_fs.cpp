@@ -57,7 +57,7 @@ static SGX_FILE* sgx_fopen_internal(const char* filename, const char* mode, cons
 
 	if (file->get_error() != SGX_FILE_STATUS_OK)
 	{
-		errno = file->get_error();
+		errno = (int)file->get_error();
 		delete file;
 		file = NULL;
 	}
@@ -164,7 +164,7 @@ int32_t sgx_ferror(SGX_FILE* stream)
 
 	protected_fs_file* file = (protected_fs_file*)stream;
 
-	return file->get_error();
+	return (int32_t)file->get_error();
 }
 
 

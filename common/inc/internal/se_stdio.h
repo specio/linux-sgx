@@ -112,7 +112,7 @@ static inline int se_copy_file(const char *dst_name, const char *src_name)
 
     while ((nr_read = read(source, buf, BUF_SIZE)) > 0)
     {
-        if (write(dest, buf, nr_read) != nr_read)
+        if (write(dest, buf, (size_t)nr_read) != nr_read)
             goto error;
     }
 #undef BUF_SIZE

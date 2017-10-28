@@ -38,7 +38,6 @@
 .text
 DECLARE_GLOBAL_FUNC __morestack
 
-__morestack:
 EENTER_PROLOG
     movl    frame_arg1, %edi                    /* fn */
 #if defined(__x86_64__)

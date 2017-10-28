@@ -54,6 +54,9 @@ CPPFLAGS += -I$(COMMON_DIR)/inc/internal      \
             -I$(LINUX_PSW_DIR)/urts/linux     \
             -I$(SIM_DIR)/tinst                \
             -I$(SIM_DIR)/uinst
+ifneq (,$(findstring clang,$(CC)))
+CPPFLAGS += -Wno-sign-conversion -Wno-cast-align -Wno-unknown-pragmas
+endif
 
 DIR1 := $(LINUX_PSW_DIR)/urts/
 DIR2 := $(LINUX_PSW_DIR)/urts/linux/

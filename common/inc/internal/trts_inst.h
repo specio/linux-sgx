@@ -38,11 +38,11 @@
   * if the following alignment requirement changes, go to selib to
   * review the memory allocation of sgx_create_report and sgx_get_key.
   */
-#define TARGET_INFO_ALIGN_SIZE  512
-#define REPORT_DATA_ALIGN_SIZE  128
-#define REPORT_ALIGN_SIZE       512
-#define KEY_REQUEST_ALIGN_SIZE  512
-#define KEY_ALIGN_SIZE          16
+#define TARGET_INFO_ALIGN_SIZE  512u
+#define REPORT_DATA_ALIGN_SIZE  128u
+#define REPORT_ALIGN_SIZE       512u
+#define KEY_REQUEST_ALIGN_SIZE  512u
+#define KEY_ALIGN_SIZE          16u
 
 #define BIT_ERROR(x)            (1 << (x))
 

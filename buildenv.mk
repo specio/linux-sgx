@@ -145,6 +145,9 @@ else
 COMMON_FLAGS += -DITT_ARCH_IA64
 endif
 
+ifneq (,$(findstring clang,$(CC)))
+COMMON_FLAGS += -Wno-unknown-warning-option
+endif
 CFLAGS   += $(COMMON_FLAGS)
 CXXFLAGS += $(COMMON_FLAGS)
 
@@ -157,6 +160,9 @@ CXXFLAGS += $(COMMON_FLAGS)
 # will hide all symbols from dynamic symbol table even if they are marked
 # as `global' in the LD version script.
 ENCLAVE_CFLAGS   = -ffreestanding -nostdinc -fvisibility=hidden -fpie
+ifneq (,$(findstring clang,$(CC)))
+ENCLAVE_CFLAGS += -Wno-unknown-warning-option
+endif
 ENCLAVE_CXXFLAGS = $(ENCLAVE_CFLAGS) -nostdinc++
 ENCLAVE_LDFLAGS  = -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
                    -Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \

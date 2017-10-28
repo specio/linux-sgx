@@ -33,6 +33,10 @@ include ../../../buildenv.mk
 
 CXXFLAGS += -Werror
 CFLAGS   += -Werror
+ifneq (,$(findstring clang,$(CC)))
+CXXFLAGS += -Wno-unknown-pragmas -Wno-sign-conversion -Wno-cast-align
+CFLAGS += -Wno-unknown-pragmas -Wno-sign-conversion -Wno-cast-align
+endif
 
 INC += $(ADDED_INC)
 INC +=  -I$(COMMON_DIR)/inc                         \

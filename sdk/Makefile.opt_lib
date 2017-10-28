@@ -214,7 +214,6 @@ tsetjmp:
 
 .PHONY: tcmalloc
 tcmalloc:
-	$(MAKE) -C gperftools/
 
 .PHONY: tprotected_fs
 tprotected_fs: edger8r

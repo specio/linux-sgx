@@ -38,6 +38,10 @@ CPPFLAGS := -I$(COMMON_DIR)/inc           \
             -I$(COMMON_DIR)/inc/internal  \
             -I$(SIM_DIR)/urtssim          \
             -I$(SIM_DIR)/tinst
+ifneq (,$(findstring clang,$(CC)))
+CPPFLAGS += -Wno-unknown-pragmas -Wno-sign-conversion -Wno-cast-align
+endif
+
 
 SRCS := $(wildcard ./*.cpp)
 SRCS += $(SIM_DIR)/urtssim/cpusvn_util.cpp

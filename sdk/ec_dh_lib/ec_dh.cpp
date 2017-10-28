@@ -183,7 +183,7 @@ static sgx_status_t dh_generate_message2(const sgx_dh_msg1_t *msg1,
     memset(&report_data, 0, sizeof(sgx_report_data_t));
     memcpy(&report_data, &msg_hash, sizeof(msg_hash)); 
 
-    uint16_t *kdf_id = (uint16_t *)&report_data.d[sizeof(msg_hash)];
+    uint16_t *kdf_id = reinterpret_cast<uint16_t *>(&report_data.d[sizeof(msg_hash)]);
     *kdf_id = AES_CMAC_KDF_ID;
 
     // Generate Report targeted towards Session Responder
@@ -227,7 +227,7 @@ static sgx_status_t dh_verify_message2(const sgx_dh_msg2_t *msg2,
      * Verify kdf_id first.
      * 2-byte little-endian KDF-ID: 0x0001 AES-CMAC Entropy Extraction and Key Derivation
      */
-    uint16_t *kdf_id = (uint16_t *)&msg2->report.body.report_data.d[sizeof(msg_hash)];
+    const uint16_t *kdf_id = reinterpret_cast<const uint16_t *>(&msg2->report.body.report_data.d[sizeof(msg_hash)]);
     if (*kdf_id != AES_CMAC_KDF_ID)
     {
         return SGX_ERROR_KDF_MISMATCH;
