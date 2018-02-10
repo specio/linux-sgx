@@ -138,6 +138,8 @@ IAERequest* SocketTransporter::receiveRequest(ICommunicationSocket* sock) {
 }
 
 uae_oal_status_t SocketTransporter::sendResponse(IAEResponse* response, ICommunicationSocket* sock) {
+    if (response == NULL)
+        return UAE_OAL_ERROR_INVALID;
     AEMessage * message = response->serialize();
     uae_oal_status_t retVal = sendMessage(message, sock);
     delete message;
