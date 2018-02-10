@@ -50,7 +50,7 @@ class SocketTransporter : public ITransporter{
         uae_oal_status_t transact(IAERequest* request, IAEResponse* response, uint32_t timeout = 0);
 
         IAERequest* receiveRequest(ICommunicationSocket* sock);// throw(SockDisconnectedException);
-        uae_oal_status_t sendResponse(IAEResponse* response, ICommunicationSocket* sock);
+        void sendResponse(IAEResponse* response, ICommunicationSocket* sock);
 
     protected:
         ISocketFactory*         mSocketFactory;
