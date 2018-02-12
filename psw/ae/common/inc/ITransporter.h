@@ -42,7 +42,7 @@ class ITransporter{
         virtual ~ITransporter() {};
 
         virtual uae_oal_status_t transact(IAERequest* request, IAEResponse* response, uint32_t timeout) = 0;
-        virtual IAERequest* receiveRequest(ICommunicationSocket* sock) = 0; //throw(SockDisconnectedException) = 0;
+        virtual IAERequest* receiveRequest(ICommunicationSocket* sock) = 0;
         virtual void sendResponse(IAEResponse* response, ICommunicationSocket* sock) = 0;
 
     protected:
