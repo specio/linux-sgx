@@ -36,8 +36,8 @@ set -e
 SCRIPT_DIR=$(dirname "$0")
 source ${SCRIPT_DIR}/installConfig
 
-PSW_DST_PATH=${SGX_PACKAGES_PATH}/${PSW_PKG_NAME}
-AESM_PATH=$PSW_DST_PATH/aesm
+AESM_DST_PATH=${SGX_PACKAGES_PATH}/${AESM_PKG_NAME}
+AESM_PATH=$AESM_DST_PATH/aesm
 
 # Install the AESM service
 
@@ -106,7 +106,7 @@ fi
 echo " done."
 
 
-cat > $PSW_DST_PATH/uninstall.sh <<EOF
+cat > $AESM_DST_PATH/uninstall.sh <<EOF
 #!/usr/bin/env bash
 #
 # Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
@@ -161,23 +161,17 @@ rm -f /etc/aesmd.conf
 #rm -fr /var/opt/aesmd
 rm -fr /var/run/aesmd
 
-# Removing runtime libraries
-rm -f /usr/\$(get_lib)/libsgx_uae_service.so
-rm -f /usr/\$(get_lib)/libsgx_urts.so
-rm -f /usr/lib/i386-linux-gnu/libsgx_uae_service.so
-rm -f /usr/lib/i386-linux-gnu/libsgx_urts.so
-
 # Removing AESM user and group
 /usr/sbin/userdel aesmd 2> /dev/null
 /usr/sbin/groupdel aesmd 2> /dev/null
 
 # Removing AESM folder
-rm -fr $PSW_DST_PATH
+rm -fr $AESM_DST_PATH
 
-echo "Intel(R) SGX PSW uninstalled."
+echo "Intel(R) SGX AESM uninstalled."
 EOF
 
-chmod +x $PSW_DST_PATH/uninstall.sh
+chmod +x $AESM_DST_PATH/uninstall.sh
 
 $AESM_PATH/cse_provision_tool || true
 rm $AESM_PATH/cse_provision_tool
@@ -239,11 +233,11 @@ elif [ -d /etc/init/ ]; then
     /sbin/initctl start aesmd
 fi
 
-echo -e "\nuninstall.sh script generated in $PSW_DST_PATH\n"
+echo -e "\nuninstall.sh script generated in $AESM_DST_PATH\n"
 
 echo -e "Installation is successful!"
 
-rm -fr $PSW_DST_PATH/scripts
+rm -fr $AESM_DST_PATH/scripts
 
 exit 0
 

@@ -34,12 +34,12 @@
 set -e
 
 [[ $# -eq 1 ]] || {
-    echo "Usage : ./build-installpkg.sh sdk | psw "
+    echo "Usage : ./build-installpkg.sh sdk | psw | aesm"
     exit 1
 }
 
-[[ "$1" == "sdk" ]] || [[ "$1" == "psw" ]] ||  {
-    echo "Usage : ./build-installpkg.sh sdk | psw "
+[[ "$1" == "sdk" ]] || [[ "$1" == "psw" ]] || [[ "$1" == "aesm" ]]|| {
+    echo "Usage : ./build-installpkg.sh sdk | psw | aesm"
     exit 1
 }
 
@@ -73,8 +73,8 @@ esac
 
 case "$INSTALLER_TYPE" in
     psw)
-        source ${LINUX_INSTALLER_COMMON_PSW_DIR}/installConfig.${PACKAGE_SUFFIX}
-        ${LINUX_INSTALLER_COMMON_PSW_DIR}/createTarball.sh
+        source ${LINUX_INSTALLER_COMMON_PSW_DIR}/installConfig_psw.${PACKAGE_SUFFIX}
+        ${LINUX_INSTALLER_COMMON_PSW_DIR}/createTarball_psw.sh
         cp  ${LINUX_INSTALLER_COMMON_PSW_DIR}/output/${TARBALL_NAME} ${SCRIPT_DIR}
     ;;
     sdk)
@@ -82,6 +82,12 @@ case "$INSTALLER_TYPE" in
         ${LINUX_INSTALLER_COMMON_SDK_DIR}/createTarball.sh
         cp  ${LINUX_INSTALLER_COMMON_SDK_DIR}/output/${TARBALL_NAME} ${SCRIPT_DIR}
     ;;
+    aesm)
+        source ${LINUX_INSTALLER_COMMON_PSW_DIR}/installConfig_aesm.${PACKAGE_SUFFIX}
+        ${LINUX_INSTALLER_COMMON_PSW_DIR}/createTarball_aesm.sh
+        cp  ${LINUX_INSTALLER_COMMON_PSW_DIR}/output/${TARBALL_NAME} ${SCRIPT_DIR}
+    ;;
+
 esac
 
 trap "rm -f ${SCRIPT_DIR}/$TARBALL_NAME 2>/dev/null" 0

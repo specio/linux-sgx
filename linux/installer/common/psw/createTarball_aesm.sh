@@ -54,14 +54,14 @@ get_arch()
 ARCH=$(get_arch)
 
 # Get the configuration for this package
-source ${SCRIPT_DIR}/installConfig.${ARCH}
+source ${SCRIPT_DIR}/installConfig_aesm.${ARCH}
 
 # Fetch the gen_source script
 cp ${LINUX_INSTALLER_COMMON_DIR}/gen_source/gen_source.py ${SCRIPT_DIR}
 
 # Copy the files according to the BOM
-python ${SCRIPT_DIR}/gen_source.py --bom=BOMs/psw_base.txt
-python ${SCRIPT_DIR}/gen_source.py --bom=BOMs/psw_${ARCH}.txt --cleanup=false
+python ${SCRIPT_DIR}/gen_source.py --bom=BOMs/aesm.txt
+python ${SCRIPT_DIR}/gen_source.py --bom=BOMs/aesm_${ARCH}.txt --cleanup=false
 python ${SCRIPT_DIR}/gen_source.py --bom=../licenses/BOM_license.txt --cleanup=false
 
 # Create the tarball

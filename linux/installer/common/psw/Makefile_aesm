@@ -29,39 +29,22 @@
 #
 #
 
-include buildenv.mk
-.PHONY: all psw sdk clean rebuild sdk_install_pkg psw_install_pkg 
+include scripts/installConfig
 
-all: sdk psw
+SOURCE_FOLDER=package
+SCRIPTS_FOLDER=scripts
 
-psw: sdk
-	$(MAKE) -C psw/ USE_OPT_LIBS=$(USE_OPT_LIBS)
+INSTALL_PATH=$(shell readlink -m $(DESTDIR)/$(SGX_PACKAGES_PATH)/$(AESM_PKG_NAME))
+SOURCE_INSTALL_PATH=$(INSTALL_PATH)
+SCRIPTS_INSTALL_PATH=$(INSTALL_PATH)/$(SCRIPTS_FOLDER)
+AESM_LIB_PATH=$(SOURCE_INSTALL_PATH)/$(LIB_DIR)
+USR_LIB_PATH=$(addprefix $(DESTDIR)/usr/, $(notdir $(shell gcc -print-multi-os-directory)))
 
-sdk:
-	$(MAKE) -C sdk/ USE_OPT_LIBS=$(USE_OPT_LIBS)
+default:
 
-# Generate SE SDK Install package
-sdk_install_pkg: sdk
-	./linux/installer/bin/build-installpkg.sh sdk
-
-psw_install_pkg: psw
-	./linux/installer/bin/build-installpkg.sh psw
-
-aesm_install_pkg: psw
-	./linux/installer/bin/build-installpkg.sh aesm
-
-clean:
-	@$(MAKE) -C sdk/                                clean
-	@$(MAKE) -C psw/                                clean
-	@$(RM)   -r $(ROOT_DIR)/build
-	@$(RM)   -r linux/installer/bin/sgx_linux*.bin
-	@$(RM)   -rf linux/installer/common/psw/output
-	@$(RM)   -rf linux/installer/common/psw/gen_source.py
-	@$(RM)   -rf linux/installer/common/sdk/output
-	@$(RM)   -rf linux/installer/common/sdk/pkgconfig/x64
-	@$(RM)   -rf linux/installer/common/sdk/pkgconfig/x86
-	@$(RM)   -rf linux/installer/common/sdk/gen_source.py
-
-rebuild:
-	$(MAKE) clean
-	$(MAKE) all
+install:
+	install -d $(SOURCE_INSTALL_PATH)
+	install -d $(SCRIPTS_INSTALL_PATH)
+	install -d $(USR_LIB_PATH)
+	cp -r $(SOURCE_FOLDER)/* $(SOURCE_INSTALL_PATH)
+	install $(SCRIPTS_FOLDER)/* $(SCRIPTS_INSTALL_PATH)
