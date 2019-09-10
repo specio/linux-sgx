@@ -36,7 +36,7 @@
 #include <wchar.h>
 #include <stddef.h>
 #include "sgx_urts.h" 
-
+#include "se_map.h"
 
 #define SGX_CAST(type, item) ((type)(item))
 
@@ -46,7 +46,7 @@ extern "C" {
 
 
 
-sgx_status_t SGX_CDECL ocall_emodpr(void* pms);
+sgx_status_t SGX_CDECL ocall_emodpr(se_file_handle_t hdevice,void* pms);
 
 
 

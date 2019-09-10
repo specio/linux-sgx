@@ -36,6 +36,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <se_map.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -116,6 +118,8 @@ typedef struct enclave_init_sgx_t {
  *      If the function fails, the return value is NULL. The extended error information will be in the enclave_error parameter if used.
 */
 void* COMM_API enclave_create(
+		se_file_handle_t hdevice,
+		bool _is_kernel_driver,
     COMM_IN_OPT void* base_address,
     COMM_IN size_t virtual_size,
     COMM_IN size_t initial_commit,
@@ -136,6 +140,7 @@ void* COMM_API enclave_create(
  *      If the number is different than target_size parameter an error occurred. The extended error information will be in the enclave_error parameter if used.
 */
 size_t COMM_API enclave_load_data(
+		se_file_handle_t hdevice,
     COMM_IN void* target_address,
     COMM_IN size_t target_size,
     COMM_IN_OPT const void* source_buffer,
@@ -153,6 +158,8 @@ size_t COMM_API enclave_load_data(
  *      zero - The function fails and the extended error information will be in the enclave_error parameter if used.
 */
 bool COMM_API enclave_initialize(
+		se_file_handle_t hdevice,
+		bool _is_kernel_driver,
     COMM_IN void* base_address,
     COMM_IN const void* info,
     COMM_IN size_t info_size,

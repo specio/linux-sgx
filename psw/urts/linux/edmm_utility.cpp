@@ -92,19 +92,17 @@ extern "C" bool open_se_device(int *hdevice, bool *in_kernel_driver)
     int hdev = open("/dev/isgx", O_RDWR);
     if (-1 == hdev)
     {
-        hdev = open("/dev/sgx", O_RDWR);
-        if (-1 == hdev)
-        {
-            SE_TRACE(SE_TRACE_WARNING, "Failed to open Intel SGX device.\n");
-            return false;
-        }
+	hdev = open("/dev/sgx/enclave", O_RDWR);
+	if (-1 == hdev) {
+		SE_TRACE(SE_TRACE_WARNING, "Failed to open Intel SGX device.\n");
+		return false;
+				}
 
         if (NULL != in_kernel_driver)
             *in_kernel_driver = true;
     }
 
     *hdevice = hdev;
-
     return true;
 }
 

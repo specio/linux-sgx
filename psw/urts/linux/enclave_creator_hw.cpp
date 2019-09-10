@@ -59,7 +59,6 @@ static uint64_t g_eid = 0x1;
 
 
 EnclaveCreatorHW::EnclaveCreatorHW():
-    m_hdevice(-1),
     m_sig_registered(false),
     m_is_kernel_driver(false)
 {
@@ -68,7 +67,7 @@ EnclaveCreatorHW::EnclaveCreatorHW():
 
 EnclaveCreatorHW::~EnclaveCreatorHW()
 {
-    close_device();
+    //close_device();
 }
 
 int EnclaveCreatorHW::error_driver2urts(int driver_error)
@@ -167,17 +166,18 @@ int EnclaveCreatorHW::error_api2urts(uint32_t api_error)
      return ret;
 }
  
-int EnclaveCreatorHW::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, bool ae)
+int EnclaveCreatorHW::create_enclave(se_file_handle_t hdevice,secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, bool ae)
 {
     assert(secs != NULL && enclave_id != NULL && start_addr != NULL);
     UNUSED(ae);
+
 
     enclave_create_sgx_t enclave_create_sgx = {0};
     if (0 != memcpy_s(enclave_create_sgx.secs, SECS_SIZE, secs, SECS_SIZE))
         return SGX_ERROR_UNEXPECTED;
 
     uint32_t enclave_error = ENCLAVE_ERROR_SUCCESS;
-    void* enclave_base = enclave_create(NULL, (size_t)secs->size, 0, ENCLAVE_TYPE_SGX2, &enclave_create_sgx, sizeof(enclave_create_sgx_t), &enclave_error);
+    void* enclave_base = enclave_create(hdevice,m_is_kernel_driver,NULL, (size_t)secs->size, 0, ENCLAVE_TYPE_SGX2, &enclave_create_sgx, sizeof(enclave_create_sgx_t), &enclave_error);
 
     if (enclave_error)
         return error_api2urts(enclave_error);
@@ -189,7 +189,7 @@ int EnclaveCreatorHW::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
     return error_api2urts(enclave_error);
 }
 
-int EnclaveCreatorHW::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, uint64_t rva, const sec_info_t &sinfo, uint32_t attr)
+int EnclaveCreatorHW::add_enclave_page(se_file_handle_t hdevice,sgx_enclave_id_t enclave_id, void *src, uint64_t rva, const sec_info_t &sinfo, uint32_t attr)
 {
     assert((rva & ((1<<SE_PAGE_SHIFT)-1)) == 0);
     UNUSED(attr);
@@ -200,12 +200,12 @@ int EnclaveCreatorHW::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, u
     {
         data_properties |= ENCLAVE_PAGE_UNVALIDATED;
     }
-    enclave_load_data((void*)(enclave_id + rva), SE_PAGE_SIZE, src, data_properties, &enclave_error);
+    enclave_load_data(hdevice,(void*)(enclave_id + rva), SE_PAGE_SIZE, src, data_properties, &enclave_error);
 
     return error_api2urts(enclave_error);
 }
 
-int EnclaveCreatorHW::try_init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, token_t *launch)
+int EnclaveCreatorHW::try_init_enclave(se_file_handle_t hdevice,sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, token_t *launch)
 {
     UNUSED(launch);
 
@@ -214,7 +214,7 @@ int EnclaveCreatorHW::try_init_enclave(sgx_enclave_id_t enclave_id, enclave_css_
         return SGX_ERROR_UNEXPECTED;
 
     uint32_t enclave_error = ENCLAVE_ERROR_SUCCESS;
-    enclave_initialize((void*)enclave_id, &enclave_init_sgx, sizeof(enclave_init_sgx), &enclave_error);
+    enclave_initialize(hdevice,m_is_kernel_driver,(void*)enclave_id, &enclave_init_sgx, sizeof(enclave_init_sgx), &enclave_error);
 
     if (enclave_error)
         return error_api2urts(enclave_error);
@@ -231,9 +231,10 @@ int EnclaveCreatorHW::try_init_enclave(sgx_enclave_id_t enclave_id, enclave_css_
     return SGX_SUCCESS;
 }
 
-int EnclaveCreatorHW::destroy_enclave(sgx_enclave_id_t enclave_id, uint64_t enclave_size)
+int EnclaveCreatorHW::destroy_enclave(se_file_handle_t hdevice,sgx_enclave_id_t enclave_id, uint64_t enclave_size)
 {
     UNUSED(enclave_size);
+    UNUSED(hdevice);
 
     uint32_t enclave_error = ENCLAVE_ERROR_SUCCESS;
     enclave_delete((void*)enclave_id, &enclave_error);
@@ -247,25 +248,26 @@ bool EnclaveCreatorHW::get_plat_cap(sgx_misc_attribute_t *misc_attr)
     return get_plat_cap_by_cpuid(misc_attr);
 }
 
-bool EnclaveCreatorHW::open_device()
+bool EnclaveCreatorHW::open_device(se_file_handle_t* p_hdevice)
 {
     LockGuard lock(&m_dev_mutex);
 
-    if(-1 != m_hdevice)
+    if(-1 != *p_hdevice)
         return true;
 
-    return ::open_se_device(&m_hdevice, &m_is_kernel_driver);
+    bool ok =  ::open_se_device(p_hdevice, &m_is_kernel_driver);
+    return ok;
 }
 
-void EnclaveCreatorHW::close_device()
+void EnclaveCreatorHW::close_device(se_file_handle_t* p_hdevice)
 {
     LockGuard lock(&m_dev_mutex);
 
-    ::close_se_device(&m_hdevice);
-    m_hdevice = -1;
+    ::close_se_device(p_hdevice);
+    *p_hdevice = -1;
 }
 
-int EnclaveCreatorHW::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
+int EnclaveCreatorHW::emodpr(se_file_handle_t hdevice,uint64_t addr, uint64_t size, uint64_t flag)
 {
     sgx_modification_param params;
     memset(&params, 0 ,sizeof(sgx_modification_param));
@@ -273,7 +275,7 @@ int EnclaveCreatorHW::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
     params.range.nr_pages = (unsigned int)(size/SE_PAGE_SIZE);
     params.flags = (unsigned long)flag;
 
-    int ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_EMODPR, &params);
+    int ret = ioctl(hdevice, SGX_IOC_ENCLAVE_EMODPR, &params);
     if (ret)
     {
         SE_TRACE(SE_TRACE_ERROR, "SGX_IOC_ENCLAVE_EMODPR failed %d\n", errno);
@@ -283,14 +285,14 @@ int EnclaveCreatorHW::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
     return SGX_SUCCESS;
 }
  
-int EnclaveCreatorHW::mktcs(uint64_t tcs_addr)
+int EnclaveCreatorHW::mktcs(se_file_handle_t hdevice,uint64_t tcs_addr)
 {
     sgx_range params;
     memset(&params, 0 ,sizeof(sgx_range));
     params.start_addr = (unsigned long)tcs_addr;
     params.nr_pages = 1;
 
-    int ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_MKTCS, &params);
+    int ret = ioctl(hdevice, SGX_IOC_ENCLAVE_MKTCS, &params);
     if (ret)
     {
         SE_TRACE(SE_TRACE_ERROR, "MODIFY_TYPE failed %d\n", errno);
@@ -300,14 +302,14 @@ int EnclaveCreatorHW::mktcs(uint64_t tcs_addr)
     return SGX_SUCCESS;
 }
  
-int EnclaveCreatorHW::trim_range(uint64_t fromaddr, uint64_t toaddr)
+int EnclaveCreatorHW::trim_range(se_file_handle_t hdevice,uint64_t fromaddr, uint64_t toaddr)
 {
     sgx_range params;
     memset(&params, 0 ,sizeof(sgx_range));
     params.start_addr = (unsigned long)fromaddr;
     params.nr_pages = (unsigned int)((toaddr - fromaddr)/SE_PAGE_SIZE);
 
-    int ret= ioctl(m_hdevice, SGX_IOC_ENCLAVE_TRIM, &params);
+    int ret= ioctl(hdevice, SGX_IOC_ENCLAVE_TRIM, &params);
     if (ret)
     {
         SE_TRACE(SE_TRACE_ERROR, "SGX_IOC_ENCLAVE_TRIM failed %d\n", errno);
@@ -318,14 +320,14 @@ int EnclaveCreatorHW::trim_range(uint64_t fromaddr, uint64_t toaddr)
 
 }
  
-int EnclaveCreatorHW::trim_accept(uint64_t addr)
+int EnclaveCreatorHW::trim_accept(se_file_handle_t hdevice,uint64_t addr)
 {
     sgx_range params;
     memset(&params, 0 ,sizeof(sgx_range));
     params.start_addr = (unsigned long)addr;
     params.nr_pages = 1;
 
-    int ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_NOTIFY_ACCEPT, &params);
+    int ret = ioctl(hdevice, SGX_IOC_ENCLAVE_NOTIFY_ACCEPT, &params);
 
 
     if (ret)
@@ -337,7 +339,7 @@ int EnclaveCreatorHW::trim_accept(uint64_t addr)
     return SGX_SUCCESS;
 }
  
-int EnclaveCreatorHW::remove_range(uint64_t fromaddr, uint64_t numpages)
+int EnclaveCreatorHW::remove_range(se_file_handle_t hdevice,uint64_t fromaddr, uint64_t numpages)
 {
     int ret = -1;
     uint64_t i;
@@ -346,7 +348,7 @@ int EnclaveCreatorHW::remove_range(uint64_t fromaddr, uint64_t numpages)
     for (i = 0; i < numpages; i++)
     {
         start = (unsigned long)fromaddr + (unsigned long)(i << SE_PAGE_SHIFT);
-        ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_PAGE_REMOVE, &start);
+        ret = ioctl(hdevice, SGX_IOC_ENCLAVE_PAGE_REMOVE, &start);
         if (ret)
         {
             SE_TRACE(SE_TRACE_ERROR, "PAGE_REMOVE failed %d\n", errno);
@@ -381,12 +383,17 @@ bool EnclaveCreatorHW::is_EDMM_supported(sgx_enclave_id_t enclave_id)
 
 bool EnclaveCreatorHW::is_driver_compatible()
 {
-    open_device();
-    return is_driver_support_edmm(m_hdevice);
+    se_file_handle_t hdevice=-1;
+	  open_device(&hdevice);
+    bool ok = is_driver_support_edmm(hdevice);
+    close_device(&hdevice);
+    return ok;
 }
 
 bool EnclaveCreatorHW::is_in_kernel_driver()
 {
-    open_device();
+    se_file_handle_t hdevice=-1;
+    open_device(&hdevice);
+    close_device(&hdevice);
     return m_is_kernel_driver;
 }

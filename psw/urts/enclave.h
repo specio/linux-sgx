@@ -43,6 +43,7 @@
 #include "uncopyable.h"
 #include "node.h"
 #include "uswitchless.h"
+#include "se_map.h"
 
 class CLoader;
 
@@ -88,8 +89,10 @@ public:
 #ifdef SE_SIM
     void *get_global_data_sim_ptr();
 #endif 
-
+		se_file_handle_t get_device(){return m_device;}
+		void set_device(se_file_handle_t hdevice){m_device = hdevice;}
 private:
+		se_file_handle_t m_device;
     CTrustThread * get_tcs(int ecall_cmd);
     void put_tcs(CTrustThread *trust_thread);
     sgx_status_t error_trts2urts(unsigned int trts_error);

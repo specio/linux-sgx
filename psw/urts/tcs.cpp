@@ -434,7 +434,7 @@ bool CTrustThreadPool::need_to_new_thread()
 
 static int make_tcs(size_t tcs)
 {
-    return g_enclave_creator->mktcs(tcs);
+    return g_enclave_creator->mktcs(0,tcs);// for SGX2 needs a real handle !
 }
 
 struct ms_str

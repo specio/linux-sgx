@@ -45,23 +45,26 @@ class EnclaveCreatorST : public EnclaveCreator
 public:
     EnclaveCreatorST();
     virtual ~EnclaveCreatorST();
-    int create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, bool ae);
-    int add_enclave_page(sgx_enclave_id_t enclave_id, void *source, uint64_t offset, const sec_info_t &sinfo, uint32_t attr);
-    int init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, SGXLaunchToken *lc, le_prd_css_file_t *prd_css_file);
+    int create_enclave(se_file_handle_t hdevice,secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, bool ae);
+    int add_enclave_page(se_file_handle_t hdevice,sgx_enclave_id_t enclave_id, void *source, uint64_t offset, const sec_info_t &sinfo, uint32_t attr);
+    int init_enclave(se_file_handle_t hdevice,sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, SGXLaunchToken *lc, le_prd_css_file_t *prd_css_file);
     int get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadata_t *metadata, SGXLaunchToken * const lc, uint32_t flag);
     bool get_plat_cap(sgx_misc_attribute_t *se_attr);
-    int destroy_enclave(sgx_enclave_id_t enclave_id, uint64_t enclave_size);
+    int destroy_enclave(se_file_handle_t hdevice,sgx_enclave_id_t enclave_id, uint64_t enclave_size);
     int initialize(sgx_enclave_id_t enclave_id);
     bool use_se_hw() const;
     bool is_EDMM_supported(sgx_enclave_id_t enclave_id);
     bool is_driver_compatible();
     bool is_in_kernel_driver();
     int get_enclave_info(uint8_t *hash, int size, uint64_t *quota);
-    int emodpr(uint64_t addr, uint64_t size, uint64_t flag);
-    int mktcs(uint64_t tcs_addr);
-    int trim_range(uint64_t fromaddr, uint64_t toaddr);
-    int trim_accept(uint64_t addr);
-    int remove_range(uint64_t fromaddr, uint64_t numpages);
+    int emodpr(se_file_handle_t hdevice,uint64_t addr, uint64_t size, uint64_t flag);
+    int mktcs(se_file_handle_t hdevice,uint64_t tcs_addr);
+    int trim_range(se_file_handle_t hdevice,uint64_t fromaddr, uint64_t toaddr);
+    int trim_accept(se_file_handle_t hdevice,uint64_t addr);
+    int remove_range(se_file_handle_t hdevice,uint64_t fromaddr, uint64_t numpages);
+    bool open_device(se_file_handle_t* p_hdevice);
+    void close_device(se_file_handle_t* p_hdevice);
+
 private:
     uint8_t m_enclave_hash[SGX_HASH_SIZE];
     EVP_MD_CTX  *m_ctx;

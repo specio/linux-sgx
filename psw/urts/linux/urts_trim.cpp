@@ -41,7 +41,7 @@ typedef struct ms_trim_accept_ocall_t {
     size_t ms_addr;
 } ms_trim_accept_ocall_t;
 
-sgx_status_t ocall_trim_range(void* pms)
+sgx_status_t ocall_trim_range(se_file_handle_t hdevice,void* pms)
 {
     int ret = 0;
     ms_trim_range_ocall_t* ms = SGX_CAST(ms_trim_range_ocall_t*, pms);
@@ -51,12 +51,12 @@ sgx_status_t ocall_trim_range(void* pms)
     {
         return SGX_ERROR_UNEXPECTED;
     }
-    ret = enclave_creator->trim_range(ms->ms_fromaddr, ms->ms_toaddr);
+    ret = enclave_creator->trim_range(hdevice,ms->ms_fromaddr, ms->ms_toaddr);
     
     return (sgx_status_t)ret; 
 }
 
-sgx_status_t ocall_trim_accept(void* pms)
+sgx_status_t ocall_trim_accept(se_file_handle_t hdevice,void* pms)
 {
     int ret = 0;
     ms_trim_accept_ocall_t* ms = SGX_CAST(ms_trim_accept_ocall_t*, pms);
@@ -67,7 +67,7 @@ sgx_status_t ocall_trim_accept(void* pms)
         return SGX_ERROR_UNEXPECTED;
     }
 
-    ret = enclave_creator->trim_accept(ms->ms_addr);
+    ret = enclave_creator->trim_accept(hdevice,ms->ms_addr);
 
     return (sgx_status_t)ret; 
 

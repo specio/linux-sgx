@@ -40,6 +40,7 @@
 #include "section_info.h"
 #include "launch_checker.h"
 #include "file.h"
+#include "se_map.h"
 
 #define GET_RELOC_FAILED ((uint8_t *)-1)
 
@@ -57,26 +58,26 @@ class CLoader: private Uncopyable
 public:
     CLoader(uint8_t *mapped_file_base, BinParser &parser);
     virtual ~CLoader();
-    int load_enclave(SGXLaunchToken *lc, int flag, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file = NULL, sgx_misc_attribute_t *misc_attr = NULL);
-    int load_enclave_ex(SGXLaunchToken *lc, bool is_debug, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file = NULL, sgx_misc_attribute_t *misc_attr = NULL);
-    int destroy_enclave();
+    int load_enclave(se_file_handle_t hdevice,SGXLaunchToken *lc, int flag, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file = NULL, sgx_misc_attribute_t *misc_attr = NULL);
+    int load_enclave_ex(se_file_handle_t hdevice,SGXLaunchToken *lc, bool is_debug, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file = NULL, sgx_misc_attribute_t *misc_attr = NULL);
+    int destroy_enclave(se_file_handle_t hdevice);
     sgx_enclave_id_t get_enclave_id() const;
     const void* get_start_addr() const;
     const secs_t& get_secs() const;
     const std::vector<std::pair<tcs_t *, bool>>& get_tcs_list() const;
     void* get_symbol_address(const char* const sym);
-    int set_memory_protection(bool is_after_initialization);
-    int post_init_action(layout_t *start, layout_t *end, uint64_t delta);
-    int post_init_action_commit(layout_t *start, layout_t *end, uint64_t delta);
+    int set_memory_protection(se_file_handle_t hdevice,bool is_after_initialization);
+    int post_init_action(se_file_handle_t hdevice,layout_t *start, layout_t *end, uint64_t delta);
+    int post_init_action_commit(se_file_handle_t hdevice,layout_t *start, layout_t *end, uint64_t delta);
 
 private:
-    int build_mem_region(const section_info_t &sec_info);
-    int build_image(SGXLaunchToken * const lc, sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t * const misc_attr);
-    int build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, sgx_misc_attribute_t * const misc_attr);
-    int build_context(const uint64_t start_rva, layout_entry_t *layout);
-    int build_contexts(layout_t *layout_start, layout_t *layout_end, uint64_t delta);
-    int build_partial_page(const uint64_t rva, const uint64_t size, const void *source, const sec_info_t &sinfo, const uint32_t attr);
-    int build_pages(const uint64_t start_rva, const uint64_t size, const void *source, const sec_info_t &sinfo, const uint32_t attr);
+    int build_mem_region(se_file_handle_t hdevice,const section_info_t &sec_info);
+    int build_image(se_file_handle_t hdevice,SGXLaunchToken * const lc, sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t * const misc_attr);
+    int build_secs(se_file_handle_t hdevice,sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, sgx_misc_attribute_t * const misc_attr);
+    int build_context(se_file_handle_t hdevice,const uint64_t start_rva, layout_entry_t *layout);
+    int build_contexts(se_file_handle_t hdevice,layout_t *layout_start, layout_t *layout_end, uint64_t delta);
+    int build_partial_page(se_file_handle_t hdevice,const uint64_t rva, const uint64_t size, const void *source, const sec_info_t &sinfo, const uint32_t attr);
+    int build_pages(se_file_handle_t hdevice,const uint64_t start_rva, const uint64_t size, const void *source, const sec_info_t &sinfo, const uint32_t attr);
     bool is_relocation_page(const uint64_t rva, std::vector<uint8_t> *bitmap);
 
     bool is_ae(const enclave_css_t *enclave_css);
@@ -86,7 +87,7 @@ private:
     int validate_patch_table();
     int validate_metadata();
     int get_debug_flag(const token_t * const launch);
-    virtual int build_sections(std::vector<uint8_t> *bitmap);
+    virtual int build_sections(se_file_handle_t hdevice,std::vector<uint8_t> *bitmap);
     int set_context_protection(layout_t *layout_start, layout_t *layout_end, uint64_t delta);
 
     uint8_t             *m_mapped_file_base;
@@ -100,5 +101,8 @@ private:
     secs_t              m_secs;
     BinParser           &m_parser;
 };
+
+se_file_handle_t get_new_sgx_device();
+void close_sgx_device(se_file_handle_t* hdevice);
 
 #endif

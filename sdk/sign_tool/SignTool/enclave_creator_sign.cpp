@@ -69,8 +69,9 @@ EnclaveCreatorST::~EnclaveCreatorST()
         EVP_MD_CTX_destroy(m_ctx);
 }
 
-int EnclaveCreatorST::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, bool ae)
+int EnclaveCreatorST::create_enclave(se_file_handle_t hdevice,secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, bool ae)
 {
+    UNUSED(hdevice);
     if(!secs || !enclave_id || !start_addr)
     {
         se_trace(SE_TRACE_DEBUG, "ERROR: Bad pointer.\n");
@@ -113,10 +114,11 @@ int EnclaveCreatorST::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
     return SGX_SUCCESS;
 }
 
-int EnclaveCreatorST::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, uint64_t offset, const sec_info_t &sinfo, uint32_t attr)
+int EnclaveCreatorST::add_enclave_page(se_file_handle_t hdevice,sgx_enclave_id_t enclave_id, void *src, uint64_t offset, const sec_info_t &sinfo, uint32_t attr)
 {   
     assert(m_ctx!=NULL);
     UNUSED(enclave_id);
+    UNUSED(hdevice);
     void* source = src;
     uint8_t color_page[SE_PAGE_SIZE];
     if(!source)
@@ -197,10 +199,11 @@ int EnclaveCreatorST::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, u
     return SGX_SUCCESS;
 }
 
-int EnclaveCreatorST::init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, SGXLaunchToken *lc, le_prd_css_file_t *prd_css_file)
+int EnclaveCreatorST::init_enclave(se_file_handle_t hdevice,sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, SGXLaunchToken *lc, le_prd_css_file_t *prd_css_file)
 {
     assert(m_ctx != NULL);
     UNUSED(enclave_id), UNUSED(enclave_css), UNUSED(lc), UNUSED(prd_css_file);
+    UNUSED(hdevice);
 
     uint8_t temp_hash[SGX_HASH_SIZE];
     memset(temp_hash, 0, SGX_HASH_SIZE);
@@ -228,10 +231,12 @@ int EnclaveCreatorST::get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadat
     return SGX_SUCCESS;
 }
 
-int EnclaveCreatorST::destroy_enclave(sgx_enclave_id_t enclave_id, uint64_t enclave_size)
+int EnclaveCreatorST::destroy_enclave(se_file_handle_t hdevice,sgx_enclave_id_t enclave_id, uint64_t enclave_size)
 {
     UNUSED(enclave_id);
     UNUSED(enclave_size);
+    UNUSED(hdevice);
+
     if(m_ctx){
         EVP_MD_CTX_destroy(m_ctx);
         m_ctx = NULL;
@@ -287,45 +292,61 @@ int EnclaveCreatorST::get_enclave_info(uint8_t *hash, int size, uint64_t *quota)
     return SGX_SUCCESS;
 }
 
-int EnclaveCreatorST::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
+int EnclaveCreatorST::emodpr(se_file_handle_t hdevice,uint64_t addr, uint64_t size, uint64_t flag)
 {
     UNUSED(addr);
     UNUSED(size);
     UNUSED(flag);
+    UNUSED(hdevice);
 
     return SGX_SUCCESS;
 }
 
-int EnclaveCreatorST::mktcs(uint64_t tcs_addr)
+int EnclaveCreatorST::mktcs(se_file_handle_t hdevice,uint64_t tcs_addr)
 {
     UNUSED(tcs_addr);
+    UNUSED(hdevice);
 
     return SGX_SUCCESS;
 }
 
-int EnclaveCreatorST::trim_range(uint64_t fromaddr, uint64_t toaddr)
+int EnclaveCreatorST::trim_range(se_file_handle_t hdevice,uint64_t fromaddr, uint64_t toaddr)
 {
     UNUSED(fromaddr);
     UNUSED(toaddr);
+    UNUSED(hdevice);
 
     return SGX_SUCCESS;
 
 }
 
-int EnclaveCreatorST::trim_accept(uint64_t addr)
+int EnclaveCreatorST::trim_accept(se_file_handle_t hdevice,uint64_t addr)
 {
     UNUSED(addr);
+    UNUSED(hdevice);
 
     return SGX_SUCCESS;
 }
 
-int EnclaveCreatorST::remove_range(uint64_t fromaddr, uint64_t numpages)
+int EnclaveCreatorST::remove_range(se_file_handle_t hdevice,uint64_t fromaddr, uint64_t numpages)
 {
     UNUSED(fromaddr);
     UNUSED(numpages);
+    UNUSED(hdevice);
 
     return SGX_SUCCESS;
 }
+
+bool EnclaveCreatorST::open_device(se_file_handle_t* p_hdevice)
+{
+    UNUSED(p_hdevice);
+    return true;
+}
+void EnclaveCreatorST::close_device(se_file_handle_t* p_hdevice)
+{
+    UNUSED(p_hdevice);
+}
+
 
 static EnclaveCreatorST g_enclave_creator_st;
 EnclaveCreator* g_enclave_creator = &g_enclave_creator_st;

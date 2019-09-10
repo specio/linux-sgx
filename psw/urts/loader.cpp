@@ -145,7 +145,7 @@ bool CLoader::is_relocation_page(const uint64_t rva, std::vector<uint8_t> *bitma
     return false;
 }
 
-int CLoader::build_mem_region(const section_info_t &sec_info)
+int CLoader::build_mem_region(se_file_handle_t hdevice,const section_info_t &sec_info)
 {
     int ret = SGX_SUCCESS;
     uint64_t offset = 0;
@@ -179,9 +179,9 @@ int CLoader::build_mem_region(const section_info_t &sec_info)
         }
 
         if (size == SE_PAGE_SIZE)
-            ret = build_pages(rva, size, sec_info.raw_data + offset, sinfo, ADD_EXTEND_PAGE);
+            ret = build_pages(hdevice,rva, size, sec_info.raw_data + offset, sinfo, ADD_EXTEND_PAGE);
         else
-            ret = build_partial_page(rva, size, sec_info.raw_data + offset, sinfo, ADD_EXTEND_PAGE);
+            ret = build_partial_page(hdevice,rva, size, sec_info.raw_data + offset, sinfo, ADD_EXTEND_PAGE);
         if(SGX_SUCCESS != ret)
             return ret;
 
@@ -201,14 +201,14 @@ int CLoader::build_mem_region(const section_info_t &sec_info)
         rva = TRIM_TO_PAGE(rva);
 
         sinfo.flags = sec_info.flag;
-        if(SGX_SUCCESS != (ret = build_pages(rva, size, 0, sinfo, ADD_EXTEND_PAGE)))
+        if(SGX_SUCCESS != (ret = build_pages(hdevice,rva, size, 0, sinfo, ADD_EXTEND_PAGE)))
             return ret;
     }
 
     return SGX_SUCCESS;
 }
 
-int CLoader::build_sections(std::vector<uint8_t> *bitmap)
+int CLoader::build_sections(se_file_handle_t hdevice,std::vector<uint8_t> *bitmap)
 {
     int ret = SGX_SUCCESS;
     std::vector<Section*> sections = m_parser.get_sections();
@@ -230,7 +230,7 @@ int CLoader::build_sections(std::vector<uint8_t> *bitmap)
             memset(&sinfo, 0, sizeof(sinfo));
             sinfo.flags = last_section->get_si_flags();
             uint64_t rva = ROUND_TO_PAGE(last_section->get_rva() + last_section->virtual_size());
-            if(SGX_SUCCESS != (ret = build_pages(rva, size, 0, sinfo, ADD_EXTEND_PAGE)))
+            if(SGX_SUCCESS != (ret = build_pages(hdevice,rva, size, 0, sinfo, ADD_EXTEND_PAGE)))
                 return ret;
         }
 
@@ -242,7 +242,7 @@ int CLoader::build_sections(std::vector<uint8_t> *bitmap)
 
         section_info_t sec_info = { sections[i]->raw_data(), sections[i]->raw_data_size(), sections[i]->get_rva(), sections[i]->virtual_size(), sections[i]->get_si_flags(), bitmap };
 
-        if(SGX_SUCCESS != (ret = build_mem_region(sec_info)))
+        if(SGX_SUCCESS != (ret = build_mem_region(hdevice,sec_info)))
             return ret;
     }
     
@@ -257,14 +257,14 @@ int CLoader::build_sections(std::vector<uint8_t> *bitmap)
         memset(&sinfo, 0, sizeof(sinfo));
         sinfo.flags = last_section->get_si_flags();
         uint64_t rva = ROUND_TO_PAGE(last_section->get_rva() + last_section->virtual_size());
-        if(SGX_SUCCESS != (ret = build_pages(rva, size, 0, sinfo, ADD_EXTEND_PAGE)))
+        if(SGX_SUCCESS != (ret = build_pages(hdevice,rva, size, 0, sinfo, ADD_EXTEND_PAGE)))
             return ret;
     }
 
     return SGX_SUCCESS;
 }
 
-int CLoader::build_partial_page(const uint64_t rva, const uint64_t size, const void *source, const sec_info_t &sinfo, const uint32_t attr)
+int CLoader::build_partial_page(se_file_handle_t hdevice,const uint64_t rva, const uint64_t size, const void *source, const sec_info_t &sinfo, const uint32_t attr)
 {
     // RVA may or may not be aligned.
     uint64_t offset = PAGE_OFFSET(rva);
@@ -280,10 +280,10 @@ int CLoader::build_partial_page(const uint64_t rva, const uint64_t size, const v
     memcpy_s(&page_data[offset], (size_t)(SE_PAGE_SIZE - offset), source, (size_t)size);
 
     // Add the page, trimming the start address to make it page aligned.
-    return build_pages(TRIM_TO_PAGE(rva), SE_PAGE_SIZE, page_data, sinfo, attr);
+    return build_pages(hdevice,TRIM_TO_PAGE(rva), SE_PAGE_SIZE, page_data, sinfo, attr);
 }
 
-int CLoader::build_pages(const uint64_t start_rva, const uint64_t size, const void *source, const sec_info_t &sinfo, const uint32_t attr)
+int CLoader::build_pages(se_file_handle_t hdevice,const uint64_t start_rva, const uint64_t size, const void *source, const sec_info_t &sinfo, const uint32_t attr)
 {
     int ret = SGX_SUCCESS;
     uint64_t offset = 0;
@@ -294,7 +294,7 @@ int CLoader::build_pages(const uint64_t start_rva, const uint64_t size, const vo
     while(offset < size)
     {
         //call driver to add page;
-        if(SGX_SUCCESS != (ret = get_enclave_creator()->add_enclave_page(ENCLAVE_ID_IOCTL, GET_PTR(void, source, 0), rva, sinfo, attr)))
+        if(SGX_SUCCESS != (ret = get_enclave_creator()->add_enclave_page(hdevice,ENCLAVE_ID_IOCTL, GET_PTR(void, source, 0), rva, sinfo, attr)))
         {
             //if add page failed , we should remove enclave somewhere;
             return ret;
@@ -306,7 +306,7 @@ int CLoader::build_pages(const uint64_t start_rva, const uint64_t size, const vo
     return SGX_SUCCESS;
 }
 
-int CLoader::post_init_action(layout_t *layout_start, layout_t *layout_end, uint64_t delta)
+int CLoader::post_init_action(se_file_handle_t hdevice,layout_t *layout_start, layout_t *layout_end, uint64_t delta)
 {
     int ret = SGX_SUCCESS;
 
@@ -316,7 +316,7 @@ int CLoader::post_init_action(layout_t *layout_start, layout_t *layout_end, uint
         {
             uint64_t start_addr = layout->entry.rva + delta + (uint64_t)get_start_addr();
             uint64_t page_count = (uint64_t)layout->entry.page_count;
-            if (SGX_SUCCESS != (ret = get_enclave_creator()->trim_range(start_addr, start_addr + (page_count << SE_PAGE_SHIFT))))
+            if (SGX_SUCCESS != (ret = get_enclave_creator()->trim_range(hdevice,start_addr, start_addr + (page_count << SE_PAGE_SHIFT))))
                 return ret;
 
         }
@@ -326,7 +326,7 @@ int CLoader::post_init_action(layout_t *layout_start, layout_t *layout_end, uint
             for(uint32_t j = 0; j < layout->group.load_times; j++)
             {
                 step += layout->group.load_step;
-                if(SGX_SUCCESS != (ret = post_init_action(&layout[-layout->group.entry_count], layout, step)))
+                if(SGX_SUCCESS != (ret = post_init_action(hdevice,&layout[-layout->group.entry_count], layout, step)))
                     return ret;
             }
         }
@@ -334,7 +334,7 @@ int CLoader::post_init_action(layout_t *layout_start, layout_t *layout_end, uint
     return SGX_SUCCESS;
 }
   
-int CLoader::post_init_action_commit(layout_t *layout_start, layout_t *layout_end, uint64_t delta)
+int CLoader::post_init_action_commit(se_file_handle_t hdevice,layout_t *layout_start, layout_t *layout_end, uint64_t delta)
 {
     int ret = SGX_SUCCESS;
 
@@ -347,7 +347,7 @@ int CLoader::post_init_action_commit(layout_t *layout_start, layout_t *layout_en
 
             for (uint64_t i = 0; i < page_count; i++)
             {
-                if (SGX_SUCCESS != (ret = get_enclave_creator()->trim_accept(start_addr + (i << SE_PAGE_SHIFT))))
+                if (SGX_SUCCESS != (ret = get_enclave_creator()->trim_accept(hdevice,start_addr + (i << SE_PAGE_SHIFT))))
                     return ret;
             }
         }
@@ -357,7 +357,7 @@ int CLoader::post_init_action_commit(layout_t *layout_start, layout_t *layout_en
             for(uint32_t j = 0; j < layout->group.load_times; j++)
             {
                 step += layout->group.load_step;
-                if(SGX_SUCCESS != (ret = post_init_action_commit(&layout[-layout->group.entry_count], layout, step)))
+                if(SGX_SUCCESS != (ret = post_init_action_commit(hdevice,&layout[-layout->group.entry_count], layout, step)))
                     return ret;
             }
         }
@@ -365,7 +365,7 @@ int CLoader::post_init_action_commit(layout_t *layout_start, layout_t *layout_en
     return SGX_SUCCESS;
 }
       
-int CLoader::build_context(const uint64_t start_rva, layout_entry_t *layout)
+int CLoader::build_context(se_file_handle_t hdevice,const uint64_t start_rva, layout_entry_t *layout)
 {
     int ret = SGX_ERROR_UNEXPECTED;
     uint8_t added_page[SE_PAGE_SIZE];
@@ -406,7 +406,7 @@ int CLoader::build_context(const uint64_t start_rva, layout_entry_t *layout)
                     m_tcs_list.push_back(std::make_pair(GET_PTR(tcs_t, m_start_addr, rva), false));
                 }
                 sinfo.flags = layout->si_flags;
-                if(SGX_SUCCESS != (ret = build_pages(rva, ((uint64_t)layout->page_count) << SE_PAGE_SHIFT, added_page, sinfo, attributes)))
+                if(SGX_SUCCESS != (ret = build_pages(hdevice,rva, ((uint64_t)layout->page_count) << SE_PAGE_SHIFT, added_page, sinfo, attributes)))
                 {
                     return ret;
                 }
@@ -415,7 +415,7 @@ int CLoader::build_context(const uint64_t start_rva, layout_entry_t *layout)
             {   
                            
                 section_info_t sec_info = {GET_PTR(uint8_t, m_metadata, layout->content_offset), layout->content_size, rva, ((uint64_t)layout->page_count) << SE_PAGE_SHIFT, layout->si_flags, NULL};
-                if(SGX_SUCCESS != (ret = build_mem_region(sec_info)))
+                if(SGX_SUCCESS != (ret = build_mem_region(hdevice,sec_info)))
                 {
                     return ret;
                 }
@@ -435,7 +435,7 @@ int CLoader::build_context(const uint64_t start_rva, layout_entry_t *layout)
                 source = added_page;
             }
             
-            if(SGX_SUCCESS != (ret = build_pages(rva, ((uint64_t)layout->page_count) << SE_PAGE_SHIFT, source, sinfo, layout->attributes)))
+            if(SGX_SUCCESS != (ret = build_pages(hdevice,rva, ((uint64_t)layout->page_count) << SE_PAGE_SHIFT, source, sinfo, layout->attributes)))
             {
                 return ret;
             }
@@ -454,7 +454,7 @@ int CLoader::build_context(const uint64_t start_rva, layout_entry_t *layout)
     }
     return SGX_SUCCESS;
 }
-int CLoader::build_contexts(layout_t *layout_start, layout_t *layout_end, uint64_t delta)
+int CLoader::build_contexts(se_file_handle_t hdevice,layout_t *layout_start, layout_t *layout_end, uint64_t delta)
 {
     int ret = SGX_ERROR_UNEXPECTED;
     for(layout_t *layout = layout_start; layout < layout_end; layout++)
@@ -476,7 +476,7 @@ int CLoader::build_contexts(layout_t *layout_start, layout_t *layout_end, uint64
 
         if (!IS_GROUP_ID(layout->group.id))
         {
-            if(SGX_SUCCESS != (ret = build_context(delta, &layout->entry)))
+            if(SGX_SUCCESS != (ret = build_context(hdevice,delta, &layout->entry)))
             {
                 return ret;
             }
@@ -487,7 +487,7 @@ int CLoader::build_contexts(layout_t *layout_start, layout_t *layout_end, uint64
             for(uint32_t j = 0; j < layout->group.load_times; j++)
             {
                 step += layout->group.load_step;
-                if(SGX_SUCCESS != (ret = build_contexts(&layout[-layout->group.entry_count], layout, step)))
+                if(SGX_SUCCESS != (ret = build_contexts(hdevice,&layout[-layout->group.entry_count], layout, step)))
                 {
                     return ret;
                 }
@@ -496,7 +496,7 @@ int CLoader::build_contexts(layout_t *layout_start, layout_t *layout_end, uint64
     }
     return SGX_SUCCESS;
 }
-int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, sgx_misc_attribute_t * const misc_attr)
+int CLoader::build_secs(se_file_handle_t hdevice,sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, sgx_misc_attribute_t * const misc_attr)
 {
     memset(&m_secs, 0, sizeof(secs_t)); //should set resvered field of secs as 0.
     //create secs structure.
@@ -513,11 +513,7 @@ int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *con
             return SGX_ERROR_UNEXPECTED;
     }
     m_secs.config_svn = config_svn;
-
-    EnclaveCreator *enclave_creator = get_enclave_creator();
-    if(NULL == enclave_creator)
-        return SGX_ERROR_UNEXPECTED;
-    int ret = enclave_creator->create_enclave(&m_secs, &m_enclave_id, &m_start_addr, is_ae(&m_metadata->enclave_css));
+    int ret = get_enclave_creator()->create_enclave(hdevice,&m_secs, &m_enclave_id, &m_start_addr, is_ae(&m_metadata->enclave_css));
     if(SGX_SUCCESS == ret)
     {
         SE_TRACE(SE_TRACE_NOTICE, "Enclave start addr. = %p, Size = 0x%llx, %llu KB\n", 
@@ -529,17 +525,15 @@ int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *con
 
     return ret;
 }
-int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t * const misc_attr)
+int CLoader::build_image(se_file_handle_t hdevice,SGXLaunchToken * const lc, sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t * const misc_attr)
 {
     int ret = SGX_SUCCESS;
 
-
-    if(SGX_SUCCESS != (ret = build_secs(secs_attr, config_id, config_svn, misc_attr)))
+    if(SGX_SUCCESS != (ret = build_secs(hdevice,secs_attr, config_id, config_svn, misc_attr)))
     {
         SE_TRACE(SE_TRACE_WARNING, "build secs failed\n");
         return ret;
     };
-
     // read reloc bitmap before patch the enclave file
     // If load_enclave_ex try to load the enclave for the 2nd time,
     // the enclave image is already patched, and parser cannot read the information.
@@ -557,7 +551,7 @@ int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const sec
     }
 
     //build sections, copy export function table as well;
-    if(SGX_SUCCESS != (ret = build_sections(&bitmap)))
+    if(SGX_SUCCESS != (ret = build_sections(hdevice,&bitmap)))
     {
         SE_TRACE(SE_TRACE_WARNING, "build sections failed\n");
         goto fail;
@@ -566,7 +560,7 @@ int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const sec
     // build heap/thread context
     SE_TRACE_DEBUG("\n");
     se_trace(SE_TRACE_DEBUG, "\tMetadata Version = 0x%016llX\n", m_metadata->version);
-    if (SGX_SUCCESS != (ret = build_contexts(GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset), 
+    if (SGX_SUCCESS != (ret = build_contexts(hdevice,GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset),
                                       GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset + m_metadata->dirs[DIR_LAYOUT].size),
                                       0)))
     {
@@ -575,7 +569,7 @@ int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const sec
     }
 
     //initialize Enclave
-    ret = get_enclave_creator()->init_enclave(ENCLAVE_ID_IOCTL, const_cast<enclave_css_t *>(&m_metadata->enclave_css), lc, prd_css_file);
+    ret = get_enclave_creator()->init_enclave(hdevice,ENCLAVE_ID_IOCTL, const_cast<enclave_css_t *>(&m_metadata->enclave_css), lc, prd_css_file);
     if(SGX_SUCCESS != ret)
     {
         SE_TRACE(SE_TRACE_WARNING, "init_enclave failed\n");
@@ -584,13 +578,13 @@ int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const sec
 
     if(get_enclave_creator()->use_se_hw() == true)
     {
-        set_memory_protection(false);
+        set_memory_protection(hdevice,false);
     }
 
     return SGX_SUCCESS;
 
 fail:
-    get_enclave_creator()->destroy_enclave(ENCLAVE_ID_IOCTL, m_secs.size);
+    get_enclave_creator()->destroy_enclave(hdevice,ENCLAVE_ID_IOCTL, m_secs.size);
 
     return ret;
 }
@@ -770,7 +764,7 @@ bool CLoader::is_ae(const enclave_css_t *enclave_css)
     return false;
 }
 
-int CLoader::load_enclave(SGXLaunchToken *lc, int debug, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
+int CLoader::load_enclave(se_file_handle_t hdevice,SGXLaunchToken *lc, int debug, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
 {
     int ret = SGX_SUCCESS;
     sgx_misc_attribute_t sgx_misc_attr;
@@ -790,7 +784,7 @@ int CLoader::load_enclave(SGXLaunchToken *lc, int debug, const metadata_t *metad
         return ret;
     }
 
-    ret = build_image(lc, &sgx_misc_attr.secs_attr, config_id, config_svn, prd_css_file, &sgx_misc_attr);
+    ret = build_image(hdevice,lc, &sgx_misc_attr.secs_attr, config_id, config_svn, prd_css_file, &sgx_misc_attr);
     // Update misc_attr with secs.attr upon success.
     if(SGX_SUCCESS == ret)
     {
@@ -806,14 +800,14 @@ int CLoader::load_enclave(SGXLaunchToken *lc, int debug, const metadata_t *metad
     return ret;
 }
 
-int CLoader::load_enclave_ex(SGXLaunchToken *lc, bool debug, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
+int CLoader::load_enclave_ex(se_file_handle_t hdevice,SGXLaunchToken *lc, bool debug, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
 {
     unsigned int ret = SGX_SUCCESS, map_conflict_count = 3;
     bool retry = true;
 
     while (retry)
     {
-        ret = this->load_enclave(lc, debug, metadata, config_id, config_svn, prd_css_file, misc_attr);
+        ret = this->load_enclave(hdevice,lc, debug, metadata, config_id, config_svn, prd_css_file, misc_attr);
         switch(ret)
         {
             //If CreateEnclave failed due to power transition, we retry it.
@@ -838,12 +832,12 @@ int CLoader::load_enclave_ex(SGXLaunchToken *lc, bool debug, const metadata_t *m
     return ret;
 }
 
-int CLoader::destroy_enclave()
+int CLoader::destroy_enclave(se_file_handle_t hdevice)
 {
-    return get_enclave_creator()->destroy_enclave(ENCLAVE_ID_IOCTL, m_secs.size);
+    return get_enclave_creator()->destroy_enclave(hdevice,ENCLAVE_ID_IOCTL, m_secs.size);
 }
 
-int CLoader::set_memory_protection(bool is_after_initialization)
+int CLoader::set_memory_protection(se_file_handle_t hdevice,bool is_after_initialization)
 {
     int ret = 0;
     //set memory protection for segments
@@ -862,7 +856,7 @@ int CLoader::set_memory_protection(bool is_after_initialization)
         {   uint64_t start = 0, len = 0;
             uint32_t perm = 0;
             std::tie(start, len, perm) = page;
-            ret = get_enclave_creator()->emodpr(start, len, (uint64_t)perm);
+            ret = get_enclave_creator()->emodpr(hdevice,start, len, (uint64_t)perm);
             if (ret != SGX_SUCCESS)
                 return SGX_ERROR_UNEXPECTED;
         }
@@ -937,4 +931,18 @@ int CLoader::set_context_protection(layout_t *layout_start, layout_t *layout_end
         }
     }
     return SGX_SUCCESS;
+}
+
+#include "linux/edmm_utility.h"
+
+se_file_handle_t get_new_sgx_device()
+{
+		se_file_handle_t hdevice = -1;
+		get_enclave_creator()->open_device(&hdevice);
+    return hdevice;
+}
+
+void close_sgx_device(se_file_handle_t* pdevice)
+{
+    get_enclave_creator()->close_device(pdevice);
 }

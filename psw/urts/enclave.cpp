@@ -73,6 +73,7 @@ CEnclave::CEnclave()
 #ifdef SE_SIM
     m_global_data_sim_ptr = NULL;
 #endif
+		m_device = -1;
 
 }
 
@@ -195,6 +196,7 @@ sgx_status_t CEnclave::initialize(const se_file_t& file,  CLoader &ldr, const ui
 
 CEnclave::~CEnclave()
 {
+		close_sgx_device(&m_device);
     if (m_thread_pool)
     {
         delete m_thread_pool;
@@ -349,7 +351,7 @@ on_fallback:
 
                     if (get_enclave_creator()->is_EDMM_supported(CEnclave::get_enclave_id()))
                     {
-                        if (SGX_SUCCESS != (ret = get_enclave_creator()->trim_range(start, end)))
+                        if (SGX_SUCCESS != (ret = get_enclave_creator()->trim_range(m_device,start, end)))
                         {
                             se_rdunlock(&m_rwlock);
                             return (sgx_status_t)ret;
@@ -383,11 +385,11 @@ int CEnclave::ocall(const unsigned int proc, const sgx_ocall_table_t *ocall_tabl
     {
         se_rdunlock(&m_rwlock);
 		if ((int)proc == EDMM_TRIM)
-			error = ocall_trim_range(ms);
+			error = ocall_trim_range(m_device,ms);
 		else if ((int)proc == EDMM_TRIM_COMMIT)
-			error = ocall_trim_accept(ms);
+			error = ocall_trim_accept(m_device,ms);
 		else if ((int)proc == EDMM_MODPR)
-			error = ocall_emodpr(ms);
+			error = ocall_emodpr(m_device,ms);
 		else if (proc == SL_WAKE_WORKERS)
 			error = sl_ocall_wake_workers(ms);
     }
@@ -519,7 +521,7 @@ void CEnclave::destroy()
 {
     se_wtlock(&m_rwlock);
 
-    get_enclave_creator()->destroy_enclave(ENCLAVE_ID_IOCTL, m_size);
+    get_enclave_creator()->destroy_enclave(m_device,ENCLAVE_ID_IOCTL, m_size);
 
     m_destroyed = true;
     //We are going to destory m_rwlock. At this point, maybe an ecall is in progress, and try to get m_rwlock.

@@ -139,6 +139,7 @@ struct sgx_enclave_add_page {
 	__u64	src;
 	__u64	secinfo;
 	__u16	mrmask;
+	__u8	pad[6]; // V22
 } __attribute__((packed));
 
 /**
@@ -161,7 +162,7 @@ struct sgx_enclave_init {
  * @sigstruct:	address for the page data
  */
 struct sgx_enclave_init_in_kernel {
-	__u64	addr;
+	//__u64	addr; // V22
 	__u64	sigstruct;
 };
 
@@ -172,7 +173,7 @@ struct sgx_enclave_init_in_kernel {
  * @attribute_fd:       file handle of the attribute file in the securityfs
  */
 struct sgx_enclave_set_attribute {
-        __u64   addr;
+        //__u64   addr; // V22
         __u64   attribute_fd;
 };
 

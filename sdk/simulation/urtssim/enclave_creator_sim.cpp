@@ -74,13 +74,15 @@ static void cleanup_openssl(void)
 
 EnclaveCreator* g_enclave_creator = new EnclaveCreatorSim();
 
-int EnclaveCreatorSim::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, bool ae)
+int EnclaveCreatorSim::create_enclave(se_file_handle_t hdevice,secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, bool ae)
 {
     UNUSED(ae);
+    UNUSED(hdevice);
     return ::create_enclave(secs, enclave_id, start_addr);
 }
-int EnclaveCreatorSim::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, uint64_t offset, const sec_info_t &sinfo, uint32_t attr)
+int EnclaveCreatorSim::add_enclave_page(se_file_handle_t hdevice,sgx_enclave_id_t enclave_id, void *src, uint64_t offset, const sec_info_t &sinfo, uint32_t attr)
 {
+    UNUSED(hdevice);
     void* source = src;
     uint8_t color_page[SE_PAGE_SIZE];
     if(!source)
@@ -90,8 +92,9 @@ int EnclaveCreatorSim::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, 
     }
     return ::add_enclave_page(enclave_id, source, (size_t)offset, sinfo, attr);
 }
-int EnclaveCreatorSim::init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, SGXLaunchToken *lc, le_prd_css_file_t *prd_css_file)
+int EnclaveCreatorSim::init_enclave(se_file_handle_t hdevice,sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, SGXLaunchToken *lc, le_prd_css_file_t *prd_css_file)
 {
+    UNUSED(hdevice);
     UNUSED(prd_css_file);
     sgx_launch_token_t token;
     memset(token, 0, sizeof(sgx_launch_token_t));
@@ -173,8 +176,9 @@ int EnclaveCreatorSim::get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metada
     return SGX_SUCCESS;
 }
 
-int EnclaveCreatorSim::destroy_enclave(sgx_enclave_id_t enclave_id, uint64_t enclave_size)
+int EnclaveCreatorSim::destroy_enclave(se_file_handle_t hdevice,sgx_enclave_id_t enclave_id, uint64_t enclave_size)
 {
+    UNUSED(hdevice);
     UNUSED(enclave_size);
     CEnclave *enclave = CEnclavePool::instance()->get_enclave(enclave_id);
 
@@ -271,8 +275,9 @@ bool EnclaveCreatorSim::get_plat_cap(sgx_misc_attribute_t *se_attr)
     return false;
 }
 
-int EnclaveCreatorSim::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
+int EnclaveCreatorSim::emodpr(se_file_handle_t hdevice,uint64_t addr, uint64_t size, uint64_t flag)
 {
+    UNUSED(hdevice);
     UNUSED(addr);
     UNUSED(size);
     UNUSED(flag);
@@ -280,15 +285,17 @@ int EnclaveCreatorSim::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
     return SGX_SUCCESS;
 }
 
-int EnclaveCreatorSim::mktcs(uint64_t tcs_addr)
+int EnclaveCreatorSim::mktcs(se_file_handle_t hdevice,uint64_t tcs_addr)
 {
+    UNUSED(hdevice);
     UNUSED(tcs_addr);
 
     return SGX_SUCCESS;
 }
 
-int EnclaveCreatorSim::trim_range(uint64_t fromaddr, uint64_t toaddr)
+int EnclaveCreatorSim::trim_range(se_file_handle_t hdevice,uint64_t fromaddr, uint64_t toaddr)
 {
+    UNUSED(hdevice);
     UNUSED(fromaddr);
     UNUSED(toaddr);
 
@@ -296,17 +303,29 @@ int EnclaveCreatorSim::trim_range(uint64_t fromaddr, uint64_t toaddr)
 
 }
 
-int EnclaveCreatorSim::trim_accept(uint64_t addr)
+int EnclaveCreatorSim::trim_accept(se_file_handle_t hdevice,uint64_t addr)
 {
+    UNUSED(hdevice);
     UNUSED(addr);
 
     return SGX_SUCCESS;
 }
 
-int EnclaveCreatorSim::remove_range(uint64_t fromaddr, uint64_t numpages)
+int EnclaveCreatorSim::remove_range(se_file_handle_t hdevice,uint64_t fromaddr, uint64_t numpages)
 {
+    UNUSED(hdevice);
     UNUSED(fromaddr);
     UNUSED(numpages);
 
     return SGX_SUCCESS;
+}
+
+bool EnclaveCreatorSim::open_device(se_file_handle_t* p_hdevice)
+{
+    UNUSED(p_hdevice);
+    return true;
+}
+void EnclaveCreatorSim::close_device(se_file_handle_t* p_hdevice)
+{
+    UNUSED(p_hdevice);
 }

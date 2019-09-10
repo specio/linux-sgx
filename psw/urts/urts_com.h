@@ -61,6 +61,7 @@
 #include "ittnotify.h"
 #include "ittnotify_config.h"
 #include "ittnotify_types.h"
+#include "se_map.h"
 
 extern "C" int __itt_init_ittlib(const char*, __itt_group_id);
 extern "C" __itt_global* __itt_get_ittapi_global();
@@ -259,10 +260,12 @@ static int __create_enclave(BinParser &parser,
         config_id = &(kss_config->config_id);
         config_svn = kss_config->config_svn;
     }
-
-    ret = loader.load_enclave_ex(lc, debug, metadata, config_id, config_svn, prd_css_file, misc_attr);
+		se_file_handle_t hdevice = get_new_sgx_device();
+		if(hdevice == -1) return -1;
+    ret = loader.load_enclave_ex(hdevice,lc, debug, metadata, config_id, config_svn, prd_css_file, misc_attr);
     if (ret != SGX_SUCCESS)
     {
+		close_sgx_device(&hdevice);
         return ret;
     }
 
@@ -280,7 +283,7 @@ static int __create_enclave(BinParser &parser,
     {
         enclave_version = SDK_VERSION_2_0;
     }
-
+		enclave->set_device(hdevice);
     // initialize the enclave object
     ret = enclave->initialize(file,
                               loader,
@@ -291,7 +294,7 @@ static int __create_enclave(BinParser &parser,
 
     if (ret != SGX_SUCCESS)
     {
-        loader.destroy_enclave();
+        loader.destroy_enclave(hdevice);
         delete enclave; // The `enclave' object owns the `loader' object.
         return ret;
     }
@@ -300,7 +303,7 @@ static int __create_enclave(BinParser &parser,
     uint8_t *sealed_key = NULL;
     if (get_ex_feature_pointer(SGX_CREATE_ENCLAVE_EX_PCL, ex_features, ex_features_p, (void **)&sealed_key) == -1)
     {
-        loader.destroy_enclave();
+        loader.destroy_enclave(hdevice);
         delete enclave; // The `enclave' object owns the `loader' object.
         return SGX_ERROR_INVALID_PARAMETER;
     }
@@ -320,7 +323,7 @@ static int __create_enclave(BinParser &parser,
     //mode init_enclave will rely on CEnclavePool to get Enclave instance.
     if (FALSE == CEnclavePool::instance()->add_enclave(enclave))
     {
-        loader.destroy_enclave();
+        loader.destroy_enclave(hdevice);
         delete enclave;
         return SGX_ERROR_UNEXPECTED;
     }
@@ -399,7 +402,7 @@ static int __create_enclave(BinParser &parser,
     {
         layout_t *layout_start = GET_PTR(layout_t, metadata, metadata->dirs[DIR_LAYOUT].offset);
         layout_t *layout_end = GET_PTR(layout_t, metadata, metadata->dirs[DIR_LAYOUT].offset + metadata->dirs[DIR_LAYOUT].size);
-        if (SGX_SUCCESS != (ret = loader.post_init_action(layout_start, layout_end, 0)))
+        if (SGX_SUCCESS != (ret = loader.post_init_action(hdevice,layout_start, layout_end, 0)))
         {
             SE_TRACE(SE_TRACE_ERROR, "trim range error.\n");
             sgx_status_t status = SGX_SUCCESS;
@@ -423,7 +426,7 @@ static int __create_enclave(BinParser &parser,
         
         layout_t *layout_start = GET_PTR(layout_t, metadata, metadata->dirs[DIR_LAYOUT].offset);
         layout_t *layout_end = GET_PTR(layout_t, metadata, metadata->dirs[DIR_LAYOUT].offset + metadata->dirs[DIR_LAYOUT].size);
-        if (SGX_SUCCESS != (ret = loader.post_init_action_commit(layout_start, layout_end, 0)))
+        if (SGX_SUCCESS != (ret = loader.post_init_action_commit(hdevice,layout_start, layout_end, 0)))
         {
             SE_TRACE(SE_TRACE_ERROR, "trim page commit error.\n");
             sgx_status_t status = SGX_SUCCESS;
@@ -447,7 +450,7 @@ static int __create_enclave(BinParser &parser,
         }
     }
         
-    if(SGX_SUCCESS != (ret = loader.set_memory_protection(true)))
+    if(SGX_SUCCESS != (ret = loader.set_memory_protection(hdevice,true)))
     {
         sgx_status_t status = SGX_SUCCESS;
         generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
@@ -480,7 +483,7 @@ static int __create_enclave(BinParser &parser,
     return SGX_SUCCESS;
 
 fail:
-    loader.destroy_enclave();
+    loader.destroy_enclave(hdevice);
     delete enclave;
     return ret;
 }

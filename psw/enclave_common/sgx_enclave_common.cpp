@@ -46,9 +46,6 @@
 
 #define POINTER_TO_U64(A) ((__u64)((uintptr_t)(A)))
 
-static se_file_handle_t s_hdevice = -1;
-static bool s_is_kernel_driver = false;
-static se_mutex_t s_device_mutex;
 
 static std::map<void*, size_t> s_enclave_size;
 static std::map<void*, bool> s_enclave_init;
@@ -63,46 +60,14 @@ typedef struct _mem_region_t {
 
 static std::map<void*, mem_region_t> s_enclave_mem_region;
 
-extern "C" bool open_device(void)
-{
-    se_mutex_lock(&s_device_mutex);
-    if (s_hdevice != -1) {
-        se_mutex_unlock(&s_device_mutex);
-        return true;
-    }
-
-    if (true == open_se_device(&s_hdevice, &s_is_kernel_driver)) {
-        se_mutex_unlock(&s_device_mutex);
-        return true;
-    }
-
-    s_hdevice = -1;
-    s_is_kernel_driver = false;
-    se_mutex_unlock(&s_device_mutex);
-
-    return false;
-}
-
-extern "C" void close_device(void)
-{
-    se_mutex_lock(&s_device_mutex);
-
-    close_se_device(&s_hdevice);
-    s_is_kernel_driver = false;
-
-    se_mutex_unlock(&s_device_mutex);
-}
 
 static void __attribute__((constructor)) enclave_init(void)
 {
-    se_mutex_init(&s_device_mutex);
     se_mutex_init(&s_enclave_mutex);
 }
 
 static void __attribute__((destructor)) enclave_fini(void)
 {
-    close_device();
-    se_mutex_destroy(&s_device_mutex);
     se_mutex_destroy(&s_enclave_mutex);
 }
 
@@ -193,6 +158,8 @@ static uint32_t error_aesm2api(int aesm_error)
  *      If the function fails, the return value is NULL. The extended error information will be in the enclave_error parameter if used.
 */
 extern "C" void* COMM_API enclave_create(
+		se_file_handle_t hdevice,
+		bool _is_kernel_driver,
     COMM_IN_OPT void* base_address,
     COMM_IN size_t virtual_size,
     COMM_IN size_t initial_commit,
@@ -219,33 +186,31 @@ extern "C" void* COMM_API enclave_create(
     secs_t* secs = (secs_t*)enclave_create_sgx->secs;
     SE_TRACE(SE_TRACE_DEBUG, "\n secs->attibutes.flags = %llx, secs->attributes.xfrm = %llx \n", secs->attributes.flags, secs->attributes.xfrm);
 
-    if (false == open_device()) {
-        if (enclave_error != NULL)
-            *enclave_error = ENCLAVE_NOT_SUPPORTED;
-        return NULL;
-    }
 
-    void* enclave_base = mmap(base_address, virtual_size, PROT_NONE, MAP_SHARED, s_hdevice, 0);
+    void* enclave_base = mmap(base_address, virtual_size*2, PROT_NONE, MAP_SHARED, hdevice, 0);
     if (enclave_base == MAP_FAILED) {
         SE_TRACE(SE_TRACE_WARNING, "\ncreate enclave: mmap failed, errno = %d\n", errno);
         if (enclave_error != NULL)
             *enclave_error = ENCLAVE_OUT_OF_MEMORY;
         return NULL;
     }
+	uint64_t aligned_addr = ((uint64_t)enclave_base + virtual_size - 1) & ~(virtual_size - 1);
+	munmap(enclave_base, aligned_addr - (uint64_t)enclave_base);
+	munmap((void *)(aligned_addr + virtual_size),(uint64_t)enclave_base + virtual_size - aligned_addr);
+	enclave_base = (void*)aligned_addr;
 
-    secs->base = enclave_base;
+    secs->base = (void*)aligned_addr;
 
     struct sgx_enclave_create param = { 0 };
     param.src = POINTER_TO_U64(secs);
 
-    int ret = ioctl(s_hdevice, SGX_IOC_ENCLAVE_CREATE, &param);
+    int ret = ioctl(hdevice, SGX_IOC_ENCLAVE_CREATE, &param);
     if (ret) {
         SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_CREATE failed: errno = %d\n", errno);
         if (enclave_error != NULL)
             *enclave_error = error_driver2api(ret);
         return NULL;
     }
-
     se_mutex_lock(&s_enclave_mutex);
 
     s_enclave_size[enclave_base] = virtual_size;
@@ -261,20 +226,20 @@ extern "C" void* COMM_API enclave_create(
 
     se_mutex_unlock(&s_enclave_mutex);
 
-    if (s_is_kernel_driver == true && (secs->attributes.flags & SGX_FLAGS_PROVISION_KEY)) {
-        if (-1 != access("/sys/kernel/security/sgx/provision", F_OK)) {
-            int phdev = open("/sys/kernel/security/sgx/provision", O_RDWR);
+    if (_is_kernel_driver == true && (secs->attributes.flags & SGX_FLAGS_PROVISION_KEY)) {
+        if (-1 != access("/dev/sgx/provision", F_OK)) {
+            int phdev = open("/dev/sgx/provision", O_RDWR);
             if (-1 == phdev) {
                 if (enclave_error != NULL)
                     *enclave_error = ENCLAVE_NOT_AUTHORIZED;
                 return NULL;
             }
 
-            struct sgx_enclave_set_attribute attrp = { 0, 0 };
-            attrp.addr = POINTER_TO_U64(enclave_base);
+            struct sgx_enclave_set_attribute attrp = { 0 };
+            //attrp.addr = POINTER_TO_U64(enclave_base);// V22
             attrp.attribute_fd = phdev;
 
-            if (0 != ioctl(s_hdevice, SGX_IOC_ENCLAVE_SET_ATTRIBUTE, &attrp)) {
+            if (0 != ioctl(hdevice, SGX_IOC_ENCLAVE_SET_ATTRIBUTE, &attrp)) {
                 close(phdev);
 
                 if (enclave_error != NULL)
@@ -303,6 +268,7 @@ extern "C" void* COMM_API enclave_create(
  *      If the number is different than target_size parameter an error occurred. The extended error information will be in the enclave_error parameter if used.
 */
 extern "C" size_t COMM_API enclave_load_data(
+		se_file_handle_t hdevice,
     COMM_IN void* target_address,
     COMM_IN size_t target_size,
     COMM_IN_OPT const void* source_buffer,
@@ -312,6 +278,7 @@ extern "C" size_t COMM_API enclave_load_data(
     if (target_address == NULL || ((uint64_t)(target_address) & ((1 << SE_PAGE_SHIFT) - 1)) != 0 || target_size < SE_PAGE_SIZE || target_size % SE_PAGE_SIZE != 0) {
         if (enclave_error != NULL)
             *enclave_error = ENCLAVE_INVALID_PARAMETER;
+        printf("enclave_load_data err 1\n");
         return 0;
     }
 
@@ -321,6 +288,7 @@ extern "C" size_t COMM_API enclave_load_data(
         if (source == NULL) {
             if (enclave_error != NULL)
                 *enclave_error = ENCLAVE_UNEXPECTED;
+            printf("enclave_load_data err 2\n");
             return 0;
         }
 
@@ -335,19 +303,37 @@ extern "C" size_t COMM_API enclave_load_data(
         sec_info.flags |= SI_FLAG_REG;
     if (sec_info.flags & ENCLAVE_PAGE_UNVALIDATED)
         sec_info.flags ^= ENCLAVE_PAGE_UNVALIDATED;
+		// SHAY
+		//if (sec_info.flags & SI_FLAG_R)
+		//	sec_info.flags |= SI_FLAG_X;// V22 (need to sync this with what einit sees)
 
     size_t pages = target_size / SE_PAGE_SIZE;
     for (size_t i = 0; i < pages; i++) {
-        struct sgx_enclave_add_page addp = { 0, 0, 0, 0 };
+        struct sgx_enclave_add_page addp;
+				memset(&addp,0,sizeof(addp));
         addp.addr = POINTER_TO_U64((uint8_t*)target_address + SE_PAGE_SIZE * i);
         addp.src = POINTER_TO_U64(source + SE_PAGE_SIZE * i);
         addp.secinfo = POINTER_TO_U64(&sec_info);
         if (!(data_properties & ENCLAVE_PAGE_UNVALIDATED))
             addp.mrmask |= 0xFFFF;
 
-        int ret = ioctl(s_hdevice, SGX_IOC_ENCLAVE_ADD_PAGE, &addp);
+				// TBD - should allocate it inside enclave object and re-use it instead of allocating each call
+				void* src_aligned_ptr = malloc(2*SE_PAGE_SIZE);
+        if (src_aligned_ptr == NULL) {
+            if (enclave_error != NULL)
+                *enclave_error = ENCLAVE_UNEXPECTED;
+            printf("enclave_load_data err 3\n");
+            return 0;
+        }
+				uint64_t aligned_page = ((uint64_t)src_aligned_ptr + SE_PAGE_SIZE - 1) & ~(SE_PAGE_SIZE - 1);
+				memcpy((void*)aligned_page,(void*)addp.src,SE_PAGE_SIZE);
+				addp.src = (uint64_t)aligned_page;
+        int ret = ioctl(hdevice, SGX_IOC_ENCLAVE_ADD_PAGE, &addp);
+        free(src_aligned_ptr);
+
         if (ret) {
             SE_TRACE(SE_TRACE_WARNING, "\nAdd Page - %p to %p... FAIL\n", source, target_address);
+			printf("SHAY EADD failed ret=%d addr=0x%lx src=0x%lx perm=0x%lx\n",ret,(unsigned long) addp.addr,(unsigned long)addp.src ,(unsigned long) sec_info.flags);
             if (source_buffer == NULL && source != NULL)
                 free(source);
 
@@ -374,6 +360,8 @@ extern "C" size_t COMM_API enclave_load_data(
     if (enclave_base == NULL) {
         if (enclave_error != NULL)
             *enclave_error = ENCLAVE_INVALID_ENCLAVE;
+
+		printf("enclave_load_data err 5\n");
         return 0;
     }
 
@@ -388,6 +376,7 @@ extern "C" size_t COMM_API enclave_load_data(
             if (0 != mprotect(enclave_mem_region->addr, enclave_mem_region->len, enclave_mem_region->prot)) {
                 if (enclave_error != NULL)
                     *enclave_error = ENCLAVE_UNEXPECTED;
+		printf("enclave_load_data err 6\n");
                 return 0;
             }
         }
@@ -416,6 +405,8 @@ extern "C" size_t COMM_API enclave_load_data(
  *      zero - The function fails and the extended error information will be in the enclave_error parameter if used.
 */
 extern "C" bool COMM_API enclave_initialize(
+		se_file_handle_t hdevice,
+		bool _is_kernel_driver,
     COMM_IN void* base_address,
     COMM_IN const void* info,
     COMM_IN size_t info_size,
@@ -450,7 +441,7 @@ extern "C" bool COMM_API enclave_initialize(
     }
 
     int ret = 0;
-    if (s_is_kernel_driver == false) {
+    if (_is_kernel_driver == false) {
         se_mutex_lock(&s_enclave_mutex);
         std::map<void*, sgx_attributes_t>::iterator it = s_secs_attr.find(base_address);
         if (it == s_secs_attr.end()) {
@@ -479,13 +470,12 @@ extern "C" bool COMM_API enclave_initialize(
         initp.sigstruct = POINTER_TO_U64(enclave_css);
         initp.einittoken = POINTER_TO_U64(&launch_token);
 
-        ret = ioctl(s_hdevice, SGX_IOC_ENCLAVE_INIT, &initp);
+        ret = ioctl(hdevice, SGX_IOC_ENCLAVE_INIT, &initp);
     } else {
-        struct sgx_enclave_init_in_kernel initp = { 0, 0 };
-        initp.addr = POINTER_TO_U64(base_address);
+        struct sgx_enclave_init_in_kernel initp = { 0 };
         initp.sigstruct = POINTER_TO_U64(enclave_init_sgx->sigstruct);
 
-        ret = ioctl(s_hdevice, SGX_IOC_ENCLAVE_INIT_IN_KERNEL, &initp);
+        ret = ioctl(hdevice, SGX_IOC_ENCLAVE_INIT_IN_KERNEL, &initp);
     }
 
     if (ret) {

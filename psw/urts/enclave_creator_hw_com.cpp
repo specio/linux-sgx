@@ -157,7 +157,7 @@ int EnclaveCreatorHW::get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadat
     return SGX_SUCCESS;
 }
 
-int EnclaveCreatorHW::init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, SGXLaunchToken * lc, le_prd_css_file_t *prd_css_file)
+int EnclaveCreatorHW::init_enclave(se_file_handle_t hdevice,sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, SGXLaunchToken * lc, le_prd_css_file_t *prd_css_file)
 {
     UNUSED(lc);
 
@@ -168,7 +168,7 @@ int EnclaveCreatorHW::init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *e
 
     for(int i = 0; i < 2; i++)
     {
-        ret = try_init_enclave(enclave_id, &css, NULL);
+        ret = try_init_enclave(hdevice,enclave_id, &css, NULL);
 
         if(i > 0)
             return ret;

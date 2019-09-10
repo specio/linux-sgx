@@ -41,7 +41,7 @@ typedef struct ms_emodpr_ocall_t {
 
 
 
-sgx_status_t ocall_emodpr(void* pms)
+sgx_status_t ocall_emodpr(se_file_handle_t hdevice,void* pms)
 {
     int ret = 0;
     ms_trim_emodpr_ocall_t* ms = SGX_CAST(ms_trim_emodpr_ocall_t*, pms);
@@ -53,7 +53,7 @@ sgx_status_t ocall_emodpr(void* pms)
         {
             return SGX_ERROR_UNEXPECTED;
         }
-        ret = enclave_creator->emodpr(ms->ms_addr, ms->ms_size, ms->ms_epcm_perms);
+        ret = enclave_creator->emodpr(hdevice,ms->ms_addr, ms->ms_size, ms->ms_epcm_perms);
         if(0 != ret)
         {
             return (sgx_status_t)ret;
