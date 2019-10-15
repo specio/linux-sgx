@@ -29,9 +29,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #
-
-grep 'sgx\.ko$\|intel_sgx\.ko$' /lib/modules/$(uname -r)/modules.builtin &> /dev/null
-if [[ $? != "0" ]]; then
+if [ -e /dev/sgx/enclave ]; then
+    echo "In kernel sgx support."
+else
     /sbin/modinfo isgx &> /dev/null
     if [[ $? != "0" ]]; then
         /sbin/modinfo intel_sgx &> /dev/null
@@ -41,7 +41,7 @@ if [[ $? != "0" ]]; then
                 echo "Warning: You did not follow the document to install the driver package."
                 echo
             elif [[ ! -e /dev/isgx ]] && [[ ! -e /dev/sgx ]]; then
-                echo -e "\033[31;49;1mWarning: You may need to activate the SGX module if SGX is enabled in the kernel (e.g., sudo modprobe sgx) or download and install the SGX driver if the kernel doesn't have SGX support.\033[39;49;0m"
+                echo -e "\033[31;49;1mWarning: download and install the SGX driver if the kernel doesn't have SGX support.\033[39;49;0m"
                 echo
             fi
         fi

@@ -1,0 +1,3 @@
+SUBSYSTEM=="sgx", KERNEL=="sgx/enclave", RUN+="/usr/bin/setfacl -m user:aesmd:rw /dev/sgx/enclave"
+SUBSYSTEM=="sgx", KERNEL=="sgx/provision", RUN+="/usr/bin/setfacl -m user:aesmd:rw /dev/sgx/provision"
+ 

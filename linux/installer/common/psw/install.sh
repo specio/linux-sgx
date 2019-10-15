@@ -49,8 +49,12 @@ mkdir -p /var/opt/aesmd
 cp -rf $AESM_PATH/data /var/opt/aesmd/
 rm -rf $AESM_PATH/data
 cp -rf $AESM_PATH/conf/aesmd.conf /etc/aesmd.conf
+cp -rf $AESM_PATH/conf/99-aesmd.rules /etc/udev/rules.d/99-aesmd.rules
 rm -rf $AESM_PATH/conf
 chmod  0644 /etc/aesmd.conf
+chmod  0644 /etc/udev/rules.d/99-aesmd.rules
+udevadm control --reload
+udevadm trigger --subsystem-match=sgx
 chown -R aesmd:aesmd /var/opt/aesmd
 chmod 0750 /var/opt/aesmd
 
@@ -159,6 +163,7 @@ fi
 # Removing AESM configuration files
 rm -f $AESMD_DEST
 rm -f /etc/aesmd.conf
+rm -f /etc/udev/rules.d/99-aesmd.rules
 
 # Removing AESM internal folders
 #rm -fr /var/opt/aesmd
@@ -225,8 +230,10 @@ if test \$(id -u) -ne 0; then
     echo "Root privilege is required."
     exit 1
 fi
-
-if [ -e /dev/sgx ]; then
+ 
+if [ -e /dev/sgx/enclave ]; then
+    /sbin/modprobe -r isgx &> /dev/null
+elif [ -e /dev/sgx ]; then
     chmod 666 /dev/sgx &> /dev/null
     /sbin/modprobe -r isgx &> /dev/null
 else
