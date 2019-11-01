@@ -29,8 +29,8 @@ RUN ./sgx_linux_x64_psw*.bin
 USER aesmd
 WORKDIR /opt/intel/sgxpsw/aesm/
 ENV LD_LIBRARY_PATH=.
-CMD /opt/intel/sgxpsw/aesm/aesm_service --no-daemon
-#CMD /bin/bash
+CMD ./aesm_service --no-daemon
+
 
 FROM ubuntu:18.04 as sample
 RUN apt-get update && \
@@ -45,7 +45,7 @@ COPY --from=builder /linux-sgx/linux/installer/bin/*.bin ./
 RUN ./sgx_linux_x64_psw*.bin
 RUN sh -c 'echo yes | ./sgx_linux_x64_sdk_*.bin'
 
-RUN cd sgxsdk/SampleCode/SampleEnclave && \
-    SGX_DEBUG=0 SGX_MODE=HW SGX_PRERELEASE=1 make
-CMD cd /opt/intel/sgxsdk/SampleCode/SampleEnclave && \
-    ./app
+WORKDIR /opt/intel/sgxsdk/SampleCode/SampleEnclave
+RUN SGX_DEBUG=0 SGX_MODE=HW SGX_PRERELEASE=1 make
+
+CMD ./app

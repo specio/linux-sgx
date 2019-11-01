@@ -1,3 +1,5 @@
 docker
 docker/*
+docker/util/*
 *.md
+.git*
