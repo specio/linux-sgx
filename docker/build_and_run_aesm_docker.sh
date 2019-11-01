@@ -9,5 +9,7 @@ docker build --target aesm --build-arg https_proxy=$https_proxy \
 # in the expected location.  It is critical that /tmp/aesmd be
 # world writable as UIDs may be shifted in the container.
 mkdir -p -m 777 /tmp/aesmd
-chmod -R -f 777 /tmp/aesmd
-docker run --env http_proxy --env https_proxy --device=/dev/sgx -v /tmp/aesmd:/var/run/aesmd -it sgx_aesm
+chmod -R -f 777 /tmp/aesmd || sudo chmod -R -f 777 /tmp/aesmd || true
+#change /dev/isgx to /dev/sgx if DCAP driver is used
+
+docker run --env http_proxy --env https_proxy --device=/dev/isgx -v /dev/log:/dev/log -v /tmp/aesmd:/var/run/aesmd -it sgx_aesm
