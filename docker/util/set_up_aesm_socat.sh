@@ -1,3 +1,6 @@
+# this shows steps to redirect aesm socket connections to tcp connections so that
+# aesm can be deployed on separate VM.
+
 #build local image for socat
 docker build -t socat -f socat_Dockerfile .
 
