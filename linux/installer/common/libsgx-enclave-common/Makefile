@@ -47,7 +47,7 @@ AESMD_CONF_DEL=$(if $(wildcard /run/systemd/system/.*),aesmd.conf,$(if $(wildcar
 AESMD_CONF_PATH=$(shell readlink -m $(DESTDIR)/$(if $(wildcard /run/systemd/system/.*),$(if $(wildcard /lib/systemd/system/.*),/lib/systemd/system,/usr/lib/systemd/system),$(if $(wildcard /etc/init/.*),/etc/init/,)))
 
 ifeq ($(AESMD_CONF_NAME),)
-$(error "Unsupported platform - neither systemctl nor initctl is found.")
+$(warn "Unsupported platform - neither systemctl nor initctl is found.")
 endif
 
 SPLIT_VERSION=$(word $2,$(subst ., ,$1))
@@ -109,7 +109,11 @@ else
 endif
 	install -d $(VAR_RUN_PATH)
 	install -d $(AESMD_CONF_PATH)
+ifneq ($(AESMD_CONF_NAME),)
 	sed -e "s:@aesm_folder@:$(ECL_PKG_PATH)/$(ECL_PKG_NAME)/aesm:" $(SOURCE_INSTALL_PATH)/aesm/$(AESMD_CONF_NAME) > $(AESMD_CONF_PATH)/$(AESMD_CONF_NAME)
 	rm -f $(SOURCE_INSTALL_PATH)/aesm/$(AESMD_CONF_NAME)
+endif
+ifneq ($(AESMD_CONF_DEL),)
 	rm -f $(SOURCE_INSTALL_PATH)/aesm/$(AESMD_CONF_DEL)
+endif
 	
