@@ -5,11 +5,10 @@
 docker build -t socat -f socat_Dockerfile .
 
 #create a container that uses socat to listen and forward requests
-# from tcp port 2375 (mapped to host side 2376) to
+# from tcp port 2375 to
 # aesm socket at /var/run/aesmd/aesm.socket, that is
 # mounted from /tmp/aesmd on host
 docker run -d --restart=always -v /tmp/aesmd/:/var/run/aesmd \
-	-p 127.0.0.1:2376:2375 \
 	--name aesmserver \
 	socat \
 	tcp-listen:2375,fork,reuseaddr unix-connect:/var/run/aesmd/aesm.socket
