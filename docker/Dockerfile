@@ -27,7 +27,6 @@ RUN apt-get update && \
 WORKDIR /installer
 COPY --from=builder /linux-sgx/linux/installer/bin/*.bin ./
 RUN ./sgx_linux_x64_psw*.bin
-
 USER aesmd
 WORKDIR /opt/intel/sgxpsw/aesm/
 ENV LD_LIBRARY_PATH=.
@@ -84,5 +83,25 @@ RUN sh -c 'echo yes | ./sgx_linux_x64_sdk_*.bin'
 
 WORKDIR /opt/intel/sgxsdk/SampleCode/SampleEnclave
 RUN SGX_DEBUG=0 SGX_MODE=HW SGX_PRERELEASE=1 make
+
+CMD ./app
+
+
+FROM ubuntu:18.04 as ra_sample
+RUN apt-get update && \
+    apt-get install -y g++ \
+                       libcurl4-openssl-dev \
+                       libprotobuf-dev \
+                       libssl-dev \
+                       make \
+                       module-init-tools
+WORKDIR /opt/intel
+COPY --from=builder /linux-sgx/linux/installer/bin/*.bin ./
+RUN ./sgx_linux_x64_psw*.bin
+RUN sh -c 'echo yes | ./sgx_linux_x64_sdk_*.bin'
+
+WORKDIR /opt/intel/sgxsdk/SampleCode/RemoteAttestation
+RUN SGX_DEBUG=0 SGX_MODE=HW SGX_PRERELEASE=1 make
+ENV LD_LIBRARY_PATH=sample_libcrypto
 
 CMD ./app
