@@ -2,7 +2,14 @@
 
 Files in this directory demostrate how to deploy SGX enclave applications in docker containers.
 
-TL; DR: check the shell scripts for steps
+These shell scripts demostrate steps to build and start containers for different scenarios
+- [build_and_run_aesm_docker.sh](../docker/build_and_run_aesm_docker.sh) - build and run AESM in docker, using bin installer
+-  [build_and_run_aesm_docker_deb.sh](../docker/build_and_run_aesm_docker_deb.sh) - build and run AESM in docker, using deb installer
+-  [build_and_run_sample_docker.sh](../docker/build_and_run_sample_docker.sh) - build and run SampleEnclave example in docker, using bin installer
+- [build_and_run_ra.sh](../docker/build_and_run_ra.sh) - build and run RemoteAttestation example in docker, using bin installer
+- [compose_and_run.sh](../docker/compose_and_run.sh) - use docker composer to bring up separate containers for AESM and SampleEnclave example.
+
+There are also Kubernates deployment files to demostrate different ways to deploy SGX containers on a minikube node. See [Kubernates deployments](#kubernates-deployments)
 
 ## General considerations
 
