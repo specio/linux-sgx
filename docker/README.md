@@ -60,7 +60,7 @@ Note docker can pass devices nodes to container from "docker run" command line, 
 
 ### Docker files
 
-Dockerfile is a multi-stage docker file that specifies 5 image build targets:
+Dockerfile is a multi-stage docker file that specifies 6 image build targets:
 1. builder: builds psw and sdk bin and deb installers from source, with necessary prebuilt AEs and libs downloaded from 01.org.
 2. aesm: takes psw bin installer from builder, install and run the aesm deamon.
 3. sample: takes psw and sdk bin installers from build, build and run the SampleEnclave app
