@@ -66,6 +66,7 @@ Dockerfile is a multi-stage docker file that specifies 5 image build targets:
 3. sample: takes psw and sdk bin installers from build, build and run the SampleEnclave app
 4. aesm_deb: take libsgx-enclave-common deb installers from build, install and run aesm daemon
 5. sample_deb: take urts and libsgx-enclave-common deb installers from build, install and run SampleEnclave app
+6. ra_sample: takes psw and sdk bin installers from build, build and run the RemoteAttestation sample app
 
 build_and_run_aesm_docker.sh shows how to build and run the aesm image. This will start an aesm service listening to named socket, mounted to /var/run/aesmd in the container from host /tmp/aesmd
 
