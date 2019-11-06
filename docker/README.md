@@ -8,6 +8,7 @@ These shell scripts demostrate steps to build and start containers for different
 -  [build_and_run_sample_docker.sh](../docker/build_and_run_sample_docker.sh) - build and run SampleEnclave example in docker, using bin installer
 - [build_and_run_ra.sh](../docker/build_and_run_ra.sh) - build and run RemoteAttestation example in docker, using bin installer
 - [compose_and_run.sh](../docker/compose_and_run.sh) - use docker composer to bring up separate containers for AESM and SampleEnclave example.
+- [run_aesm_sample.sh](../docker/run_aesm_sample.sh) -use use wrapper scripts to run both AESM and SampleEnclave in one container
 
 There are also Kubernates deployment files to demostrate different ways to deploy SGX containers on a minikube node. See [Kubernates deployments](#kubernates-deployments)
 
@@ -21,7 +22,7 @@ Also for applications requiring remote attestation, AESM with a quoting enclave 
 
 It is recommended to either run AESM in separate container or directly on the host and expose the named socket to application containers by mounting the same Socket file on the host filesystem, /tmp/aesmd in this demo.
 
-It is not recommended, but in any case you want to run AESM and application together in the same container, please refer to docker documentation on [multi-service container](https://docs.docker.com/config/containers/multi-service_container/)
+It is not recommended, but in any case you want to run AESM and application together in the same container, please refer to docker documentation on [multi-service container](https://docs.docker.com/config/containers/multi-service_container/) for different solutions.run_aesm_sample.sh demostrate the wrapper script approach described in that reference. 
 
 ### Support for containers in different VMs on the same host
 
@@ -59,10 +60,12 @@ Note docker can pass devices nodes to container from "docker run" command line, 
 
 ### Docker files
 
-Dockerfile is a multi-stage docker file that specifies 3 image build targets:
-1. builder: builds psw and sdk bin installers from source, with necessary prebuilt AEs and libs downloaded from 01.org.
-2. aesm: takes psw installer from builder, install and run the aesm deamon.
-3. sample: takes sdk installer from build, build and run the SampleEnclave app
+Dockerfile is a multi-stage docker file that specifies 5 image build targets:
+1. builder: builds psw and sdk bin and deb installers from source, with necessary prebuilt AEs and libs downloaded from 01.org.
+2. aesm: takes psw bin installer from builder, install and run the aesm deamon.
+3. sample: takes psw and sdk bin installers from build, build and run the SampleEnclave app
+4. aesm_deb: take libsgx-enclave-common deb installers from build, install and run aesm daemon
+5. sample_deb: take urts and libsgx-enclave-common deb installers from build, install and run SampleEnclave app
 
 build_and_run_aesm_docker.sh shows how to build and run the aesm image. This will start an aesm service listening to named socket, mounted to /var/run/aesmd in the container from host /tmp/aesmd
 
