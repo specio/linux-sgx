@@ -6,6 +6,7 @@ RUN apt-get install -y git libcurl4-openssl-dev protobuf-compiler libprotobuf-de
 
 
 WORKDIR /linux-sgx
+#Assume this docker file will be invoked with root at the top of linux-sgx repo, see shell scripts for example.
 ADD . .
 
 RUN ./download_prebuilt.sh
