@@ -30,8 +30,10 @@ spec:
         volumeMounts:
         - mountPath: /var/run/aesmd
           name: aesm-vol
-        - mountPath: /dev/sgx
+        - mountPath: /dev/sgx/enclave
           name: sgx-dev
+        - mountPath: /dev/sgx/provision
+          name: sgx-prov-dev
 
       - image: sgx_sample
         imagePullPolicy: Never
@@ -44,15 +46,19 @@ spec:
         volumeMounts:
         - mountPath: /var/run/aesmd
           name: aesm-vol
-        - mountPath: /dev/sgx
+        - mountPath: /dev/sgx/enclave
           name: sgx-dev
       volumes:
       - name: aesm-vol
-        hostPath:
-            path: /tmp/aesmd
-            type: Directory
+        emptyDir:
+            medium: Memory
       - name: sgx-dev
         hostPath:
-            path: /dev/sgx
+            path: /dev/sgx/enclave
             type: CharDevice
+      - name: sgx-prov-dev
+        hostPath:
+            path: /dev/sgx/provision
+            type: CharDevice
+
       restartPolicy: Always
