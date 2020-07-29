@@ -28,7 +28,7 @@
 #
 
 
-FROM ubuntu:18.04 as builder
+FROM debian:buster-20200720 as builder
 
 RUN apt-get update && apt-get install  -y \
     autoconf \
@@ -64,10 +64,10 @@ WORKDIR /linux-sgx
 RUN make psw_install_pkg
 
 
-FROM ubuntu:18.04 as aesm 
+FROM debian:buster-20200720 as aesm 
 RUN apt-get update && apt-get install -y \
     libcurl4 \
-    libprotobuf10 \
+    libprotobuf17 \
     libssl1.1 \
     make \
     module-init-tools
@@ -81,7 +81,7 @@ ENV LD_LIBRARY_PATH=.
 CMD ./aesm_service --no-daemon
 
 
-FROM ubuntu:18.04 as sample
+FROM debian:buster-20200720 as sample
 RUN apt-get update && apt-get install -y \
     g++ \
     libcurl4-openssl-dev \

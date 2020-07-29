@@ -28,8 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-
-FROM ubuntu:18.04 as sgxbase
+FROM debian:buster-20200720 as sgxbase
 RUN apt-get update && apt-get install -y \
     gnupg \
     wget
@@ -50,14 +49,9 @@ WORKDIR /opt/intel/sgxsdk/SampleCode/SampleEnclave
 RUN SGX_DEBUG=0 SGX_MODE=HW SGX_PRERELEASE=1 make
 
 FROM sgxbase as sample
-RUN apt-get install -y \
-    libcurl4 \
-    libprotobuf10 \
-    libssl1.1
-
 # No AESM daemon, only AESM client side API support for launch.
 # For applications requiring attestation, add libsgx-quote-ex
-RUN apt-get install -y --no-install-recommends libsgx-launch libsgx-urts
+RUN apt-get install -y --no-install-recommends libsgx-urts
 
 COPY --from=sgx_sample_builder /opt/intel/sgxsdk/SampleCode/SampleEnclave/app .
 COPY --from=sgx_sample_builder /opt/intel/sgxsdk/SampleCode/SampleEnclave/enclave.signed.so .
@@ -69,13 +63,13 @@ CMD ./app
 FROM sgxbase as aesm 
 RUN apt-get install -y \
     libcurl4 \
-    libprotobuf10 \
+    libprotobuf-dev \
     libssl1.1 \
     make \
     module-init-tools
 
 # More aesm plugins, e.g libsgx-aesm-quote-ex-plugin, are needed if application requires attestation. See installation guide.
-RUN apt-get install -y libsgx-aesm-launch-plugin
+#RUN apt-get install -y libsgx-aesm-launch-plugin
 
 USER aesmd
 WORKDIR /opt/intel/sgx-aesm-service/aesm
