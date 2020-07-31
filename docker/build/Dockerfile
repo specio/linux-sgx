@@ -47,7 +47,8 @@ RUN apt-get update && apt-get install  -y \
     ocamlbuild \
     protobuf-compiler \
     python \
-    wget
+    wget \
+    zip
 
 # We assume this docker file is invoked with root at the top of linux-sgx repo, see shell scripts for example.
 WORKDIR /linux-sgx
@@ -61,39 +62,33 @@ WORKDIR /opt/intel
 RUN sh -c 'echo yes | /linux-sgx/linux/installer/bin/sgx_linux_x64_sdk_*.bin'
 
 WORKDIR /linux-sgx
-RUN make psw_install_pkg
 
+RUN make deb_psw_pkg
 
 FROM debian:buster-20200720 as aesm 
-RUN apt-get update && apt-get install -y \
-    libcurl4 \
-    libprotobuf17 \
-    libssl1.1 \
-    make \
-    module-init-tools
+RUN apt-get update 
  
 WORKDIR /installer
-COPY --from=builder /linux-sgx/linux/installer/bin/*.bin ./
-RUN ./sgx_linux_x64_psw*.bin --no-start-aesm
+COPY --from=builder /linux-sgx/linux/installer/deb/libsgx-enclave-common/*.deb ./
+COPY --from=builder /linux-sgx/linux/installer/deb/sgx-aesm-service/*.deb ./
+RUN  apt-get install -y ./libsgx-enclave-common_*_amd64.deb
+RUN  apt-get install -y ./sgx-aesm-service_*_amd64.deb
 USER aesmd
-WORKDIR /opt/intel/sgxpsw/aesm/
+WORKDIR /opt/intel/sgx-aesm-service/aesm
 ENV LD_LIBRARY_PATH=.
 CMD ./aesm_service --no-daemon
 
-
 FROM debian:buster-20200720 as sample
 RUN apt-get update && apt-get install -y \
-    g++ \
-    libcurl4-openssl-dev \
-    libprotobuf-dev \
-    libssl-dev \
-    make \
-    module-init-tools
+    build-essential
 
 WORKDIR /opt/intel
 COPY --from=builder /linux-sgx/linux/installer/bin/*.bin ./
-RUN ./sgx_linux_x64_psw*.bin --no-start-aesm
+COPY --from=builder /linux-sgx/linux/installer/deb/libsgx-enclave-common/*.deb ./
+COPY --from=builder /linux-sgx/linux/installer/deb/libsgx-urts/*.deb ./
+
 RUN sh -c 'echo yes | ./sgx_linux_x64_sdk_*.bin'
+RUN  apt-get install -y ./libsgx-enclave-common_*_amd64.deb ./libsgx-urts_*_amd64.deb
 
 WORKDIR /opt/intel/sgxsdk/SampleCode/SampleEnclave
 RUN SGX_DEBUG=0 SGX_MODE=HW SGX_PRERELEASE=1 make
