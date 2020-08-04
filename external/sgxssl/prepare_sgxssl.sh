@@ -72,5 +72,11 @@ if [ ! -f $openssl_out_dir/$openssl_ver_name.tar.gz ]; then
 fi
 
 pushd $top_dir/Linux/
-make clean all LINUX_SGX_BUILD=1 DEBUG=$DEBUG
+
+if [ "$MITIGATION" != "" ]; then
+        make clean all LINUX_SGX_BUILD=1 DEBUG=$DEBUG
+else
+        make clean sgxssl_no_mitigation LINUX_SGX_BUILD=1 DEBUG=$DEBUG
+fi
+
 popd

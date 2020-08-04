@@ -56,7 +56,7 @@ COPY . .
 
 RUN ./download_prebuilt.sh
 
-RUN make sdk_install_pkg_no_mitigation
+RUN make sdk_install_pkg_no_mitigation USE_OPT_LIBS=0
 
 WORKDIR /opt/intel
 RUN sh -c 'echo yes | /linux-sgx/linux/installer/bin/sgx_linux_x64_sdk_*.bin'
