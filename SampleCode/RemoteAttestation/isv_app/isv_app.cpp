@@ -229,9 +229,7 @@ int main(int argc, char* argv[])
         else
         {
             fprintf(OUTPUT, "\nSecond round, we will try EPID algorithm.\n");
-        }
         // Preparation for remote attestation by configuring extended epid group id.
-        {
             uint32_t extended_epid_group_id = 0;
             ret = sgx_get_extended_epid_group_id(&extended_epid_group_id);
             if (SGX_SUCCESS != ret)
