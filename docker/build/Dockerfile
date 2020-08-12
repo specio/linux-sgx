@@ -56,7 +56,7 @@ COPY . .
 
 RUN ./download_prebuilt.sh
 
-RUN make sdk_install_pkg_no_mitigation USE_OPT_LIBS=0
+RUN make sdk_install_pkg_no_mitigation
 
 WORKDIR /opt/intel
 RUN sh -c 'echo yes | /linux-sgx/linux/installer/bin/sgx_linux_x64_sdk_*.bin'
@@ -86,15 +86,17 @@ WORKDIR /opt/intel
 COPY --from=builder /linux-sgx/linux/installer/bin/*.bin ./
 COPY --from=builder /linux-sgx/linux/installer/deb/libsgx-enclave-common/*.deb ./
 COPY --from=builder /linux-sgx/linux/installer/deb/libsgx-urts/*.deb ./
+COPY --from=builder /linux-sgx/linux/installer/deb/libsgx-epid/*.deb ./
+COPY --from=builder /linux-sgx/linux/installer/deb/libsgx-quote-ex/*.deb ./
 
 RUN sh -c 'echo yes | ./sgx_linux_x64_sdk_*.bin'
-RUN  apt-get install -y ./libsgx-enclave-common_*_amd64.deb ./libsgx-urts_*_amd64.deb
+RUN  apt-get install -y ./libsgx-enclave-common_*_amd64.deb ./libsgx-urts_*_amd64.deb ./libsgx-epid_*_amd64.deb ./libsgx-quote-ex_*_amd64.deb
 
-WORKDIR /opt/intel/sgxsdk/SampleCode/SampleEnclave
+WORKDIR /opt/intel/sgxsdk/SampleCode/RemoteAttestation
 RUN SGX_DEBUG=0 SGX_MODE=HW SGX_PRERELEASE=1 make
 
 RUN adduser -q --disabled-password --gecos "" --no-create-home sgxuser
 USER sgxuser
-
+ENV LD_LIBRARY_PATH=/opt/intel/sgxsdk/SampleCode/RemoteAttestation/sample_libcrypto/
 CMD ./app
 

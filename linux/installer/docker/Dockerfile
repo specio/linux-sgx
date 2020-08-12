@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-FROM debian:buster-20200720 as sgxbase
+FROM ubuntu:18.04 as sgxbase
 RUN apt-get update && apt-get install -y \
     gnupg \
     wget
@@ -45,31 +45,31 @@ WORKDIR /opt/intel
 RUN wget https://download.01.org/intel-sgx/sgx-linux/2.8/distro/ubuntu18.04-server/sgx_linux_x64_sdk_2.8.100.3.bin
 RUN chmod +x sgx_linux_x64_sdk_2.8.100.3.bin
 RUN echo 'yes' | ./sgx_linux_x64_sdk_2.8.100.3.bin
-WORKDIR /opt/intel/sgxsdk/SampleCode/SampleEnclave
+WORKDIR /opt/intel/sgxsdk/SampleCode/RemoteAttestation
+COPY ra_sample.patch .
+RUN patch -p3 < ra_sample.patch
 RUN SGX_DEBUG=0 SGX_MODE=HW SGX_PRERELEASE=1 make
 
 FROM sgxbase as sample
 # No AESM daemon, only AESM client side API support for launch.
-# For applications requiring attestation, add libsgx-quote-ex
-RUN apt-get install -y --no-install-recommends libsgx-urts
+# For applications requiring attestation, add libsgx-quote-ex fpr put-of-process quoting
+#libsgx-epid is needed for this RA sample falls back to epid in case ECDSA not supported by aesm
+RUN apt-get install -y --no-install-recommends libsgx-urts libsgx-epid libsgx-quote-ex
 
-COPY --from=sgx_sample_builder /opt/intel/sgxsdk/SampleCode/SampleEnclave/app .
-COPY --from=sgx_sample_builder /opt/intel/sgxsdk/SampleCode/SampleEnclave/enclave.signed.so .
+COPY --from=sgx_sample_builder /opt/intel/sgxsdk/SampleCode/RemoteAttestation/app .
+COPY --from=sgx_sample_builder /opt/intel/sgxsdk/SampleCode/RemoteAttestation/isv_enclave.signed.so .
+COPY --from=sgx_sample_builder /opt/intel/sgxsdk/SampleCode/RemoteAttestation/libservice_provider.so .
+COPY --from=sgx_sample_builder /opt/intel/sgxsdk/SampleCode/RemoteAttestation/sample_libcrypto/libsample_libcrypto.so .
 
 RUN adduser -q --disabled-password --gecos "" --no-create-home sgxuser
 USER sgxuser
+ENV LD_LIBRARY_PATH=./
 CMD ./app
 
 FROM sgxbase as aesm 
-RUN apt-get install -y \
-    libcurl4 \
-    libprotobuf-dev \
-    libssl1.1 \
-    make \
-    module-init-tools
 
-# More aesm plugins, e.g libsgx-aesm-quote-ex-plugin, are needed if application requires attestation. See installation guide.
-#RUN apt-get install -y libsgx-aesm-launch-plugin
+#support out-of-process quoting
+RUN apt-get install -y libsgx-aesm-quote-ex-plugin
 
 USER aesmd
 WORKDIR /opt/intel/sgx-aesm-service/aesm
