@@ -79,6 +79,20 @@ sdk:
 	$(MAKE) -C external/dcap_source/QuoteVerification/dcap_tvl clean
 	$(MAKE) -C external/dcap_source/QuoteVerification/dcap_tvl
 
+psw_lite:
+	$(MAKE) SGX_HEADER_DIR="`pwd`/common/inc" -C psw/enclave_common
+	$(MAKE) SGX_HEADER_DIR="`pwd`/common/inc" -C psw/urts/linux
+
+sdk_lite:
+	$(MAKE) -C sdk/ USE_OPT_LIBS=2
+
+sgx_lite: psw_lite sdk_lite
+
+cleanlite:
+	$(MAKE) -C psw/enclave_common clean
+	$(MAKE) -C psw/urts/linux clean
+	$(MAKE) -C sdk/ clean
+
 # Generate SE SDK Install package
 sdk_install_pkg_no_mitigation: sdk_no_mitigation
 	./linux/installer/bin/build-installpkg.sh sdk
