@@ -35,8 +35,10 @@ include Makefile.source
 
 # SDK requires prebuilt IPP libraries.
 CHECK_OPT :=
+ifneq ($(USE_CRYPTO_LIB),0)
 ifeq ("$(wildcard $(LINUX_EXTERNAL_DIR)/ippcp_internal/lib/linux/intel64)", "")
 CHECK_OPT := opt_check_failed
+endif
 endif
 
 .PHONY: opt_check_failed

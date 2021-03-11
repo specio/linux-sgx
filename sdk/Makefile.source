@@ -178,7 +178,7 @@ trts:
 
 .PHONY: tcrypto
 tcrypto: edger8r
-	$(MAKE) -C tlibcrypto/
+	$(MAKE) -C tlibcrypto/ USE_OPT_LIBS=$(USE_OPT_LIBS)
 
 .PHONY: tkey_exchange
 tkey_exchange: edger8r
@@ -216,8 +216,9 @@ ptrace:
 
 .PHONY: sample_crypto
 sample_crypto:
+ifeq ($(USE_CRYPTO_LIB), 1)
 	$(MAKE) -C sample_libcrypto
-
+endif
 # ---------------------------------------------------
 #  standalone, untrusted libraries
 # ---------------------------------------------------

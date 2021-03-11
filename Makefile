@@ -84,7 +84,7 @@ psw_lite:
 	$(MAKE) SGX_HEADER_DIR="`pwd`/common/inc" -C psw/urts/linux
 
 sdk_lite:
-	$(MAKE) -C sdk/ USE_OPT_LIBS=2
+	$(MAKE) -C sdk/ USE_OPT_LIBS=0
 
 sgx_lite: psw_lite sdk_lite
 
