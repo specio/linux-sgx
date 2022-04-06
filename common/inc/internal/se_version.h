@@ -31,9 +31,9 @@
 #ifndef _SE_VERSION_H_
 #define _SE_VERSION_H_
 
-#define STRFILEVER    "2.15.101.1"
+#define STRFILEVER    "2.99.101.1"
 #define SGX_MAJOR_VERSION       2
-#define SGX_MINOR_VERSION       15
+#define SGX_MINOR_VERSION       99
 #define SGX_REVISION_VERSION    101
 #define MAKE_VERSION_UINT(major,minor,rev)  (((uint64_t)major)<<32 | ((uint64_t)minor) << 16 | rev)
 #define VERSION_UINT        MAKE_VERSION_UINT(SGX_MAJOR_VERSION, SGX_MINOR_VERSION, SGX_REVISION_VERSION)
